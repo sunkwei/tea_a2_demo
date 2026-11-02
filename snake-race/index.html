@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>贪吃蛇竞赛 · Snake Arena</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="logo">🐍</span>
+          <div>
+            <h1>贪吃蛇竞赛</h1>
+            <p class="sub">SNAKE ARENA · 2-4 条蛇 · 生存到最后者获胜</p>
+          </div>
+        </div>
+        <div class="topstats">
+          <div class="chip"><span>回合</span><b id="stat-tick">0</b></div>
+          <div class="chip"><span>存活</span><b id="stat-alive">-</b></div>
+          <div class="chip"><span>上一轮</span><b id="stat-last">0.0 ms</b></div>
+          <div class="chip"><span>最慢一轮</span><b id="stat-max">0.0 ms</b></div>
+        </div>
+      </header>
+
+      <main class="stage">
+        <div class="board-wrap">
+          <canvas id="board"></canvas>
+          <div id="overlay" class="overlay hidden">
+            <div class="overlay-card">
+              <div id="overlay-title">准备开始</div>
+              <div id="overlay-desc" class="muted">按「开始比赛」让 AI 们上场</div>
+              <button id="overlay-btn" class="primary">开始比赛</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="panel">
+          <section class="card">
+            <h2>比赛设置</h2>
+            <div class="row">
+              <label>蛇的数量</label>
+              <div class="seg" id="seg-count">
+                <button data-n="2">2</button>
+                <button data-n="3">3</button>
+                <button data-n="4" class="active">4</button>
+              </div>
+            </div>
+            <div class="row">
+              <label>速度 <b id="speed-label">10</b> 回合/秒</label>
+              <input id="speed" type="range" min="3" max="24" value="10" />
+            </div>
+            <div class="row">
+              <label>食物数量</label>
+              <div class="seg" id="seg-food">
+                <button data-f="1">标准 1 个</button>
+                <button data-f="0" class="active">随蛇数</button>
+              </div>
+            </div>
+            <div id="snake-config"></div>
+            <div class="actions">
+              <button id="btn-start" class="primary">开始比赛</button>
+              <button id="btn-pause">暂停</button>
+              <button id="btn-restart">重开</button>
+            </div>
+            <p class="hint">快捷键：<kbd>空格</kbd> 暂停/继续 · <kbd>R</kbd> 重开</p>
+          </section>
+
+          <section class="card">
+            <h2>实时战绩</h2>
+            <div id="scoreboard" class="scoreboard"></div>
+          </section>
+
+          <section class="card">
+            <h2>性能预算 <span class="muted small">每轮计算 ≤ 50ms</span></h2>
+            <div class="budget">
+              <div class="budget-bar"><i id="budget-fill"></i></div>
+              <div class="budget-text">
+                <span>上一轮 <b id="budget-last">0.0 ms</b></span>
+                <span>最慢 <b id="budget-max">0.0 ms</b></span>
+                <span>最慢单蛇 <b id="budget-bot">0.0 ms</b></span>
+                <span>超限轮次 <b id="budget-violations">0</b></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>规则</h2>
+            <ul class="rules">
+              <li>网格移动，每回合前进一格，只能上下左右</li>
+              <li>不可掉头；撞墙 / 撞身体 / 咬到自己 → 出局</li>
+              <li>吃食物身体 +1，食物随机刷新</li>
+              <li>头对头：短者死，长度相同同归于尽</li>
+              <li>尾巴会前移让位，可合法进入对方腾出的尾格</li>
+              <li>生存到最后者获胜</li>
+            </ul>
+          </section>
+
+          <section class="card">
+            <h2>历史战绩</h2>
+            <div id="history" class="history muted">还没有比赛记录</div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

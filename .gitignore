@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.vite/
+
+attention-film/release/frames/
+attention-film/release/music.wav
+attention-film/release/attention-film-silent.mp4
+attention-film/tools/shots/
+iptv-player/tools/shots/
+iptv-player/dist-single/
+# tea_agent 运行目录（会话记录 / 工具 / 临时文件，不入库）
+.tea_agent_run/
+
+# Godot 导入缓存与运行截图
+GoDot/.godot/
+GoDot/shots/

@@ -1,0 +1,142 @@
+:root {
+  --pink: #ff5fb0;
+  --cyan: #59f0ff;
+  --ink: #0a0d18;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #05070f;
+  color: #e8eefc;
+  font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app { position: fixed; inset: 0; }
+#app canvas { display: block; }
+
+/* ---------- loader ---------- */
+#loader {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 45%, #131a2e 0%, #05070f 70%);
+  transition: opacity 0.9s ease;
+}
+#loader.hide { opacity: 0; pointer-events: none; }
+.loader-inner { text-align: center; }
+.paw {
+  font-size: 46px;
+  animation: paw 1.1s ease-in-out infinite;
+  filter: drop-shadow(0 0 14px rgba(255, 95, 176, 0.8));
+}
+@keyframes paw {
+  0%, 100% { transform: translateY(0) rotate(-8deg); }
+  50% { transform: translateY(-14px) rotate(8deg); }
+}
+.loader-text {
+  margin-top: 14px;
+  font-size: 13px;
+  letter-spacing: 0.28em;
+  color: #9fb0d8;
+}
+
+/* ---------- hud ---------- */
+#hud {
+  position: fixed;
+  top: 22px;
+  left: 24px;
+  z-index: 20;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+#hud.hidden { opacity: 0; transform: translateY(-12px); }
+#hud h1 {
+  margin: 0;
+  font-size: 27px;
+  letter-spacing: 0.16em;
+  font-weight: 800;
+  background: linear-gradient(96deg, #ff8fc8 0%, #ffd6a0 42%, #7fe9ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 26px rgba(255, 95, 176, 0.35);
+}
+#hud .sub {
+  margin: 5px 0 0;
+  font-size: 10.5px;
+  letter-spacing: 0.34em;
+  color: #7d8bb4;
+}
+#hud .tips {
+  margin: 14px 0 0;
+  font-size: 11.5px;
+  line-height: 1.85;
+  color: #8f9cc0;
+  letter-spacing: 0.04em;
+}
+#hud .tips b {
+  color: #ffd9a8;
+  font-weight: 700;
+  padding: 0 2px;
+}
+#hud .tips a.snake-link {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #9ff0c4;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.08);
+  transition: background 0.2s, border-color 0.2s;
+}
+#hud .tips a.snake-link:hover {
+  background: rgba(74, 222, 128, 0.18);
+  border-color: rgba(74, 222, 128, 0.6);
+}
+
+/* ---------- 喵～！气泡 ---------- */
+#meow,
+.meow-pop {
+  position: fixed;
+  z-index: 30;
+  transform: translate(-50%, -50%);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #ffd9a8;
+  text-shadow: 0 0 18px rgba(255, 95, 176, 0.85);
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
+}
+#meow.show,
+.meow-pop.show {
+  animation: meow-pop 1.15s ease-out forwards;
+}
+@keyframes meow-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  22% { opacity: 1; transform: translate(-50%, -62%) scale(1.18); }
+  55% { opacity: 1; transform: translate(-50%, -78%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -118%) scale(0.94); }
+}
+
+@media (max-width: 640px) {
+  #hud h1 { font-size: 21px; }
+  #hud .tips { font-size: 10.5px; }
+  #meow, .meow-pop { font-size: 20px; }
+}
+
+/* HUD 整体不可交互，但入口链接要能点 */
+#hud .tips a.snake-link { pointer-events: auto; }

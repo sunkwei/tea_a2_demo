@@ -1,0 +1,43 @@
+{
+  "name": "meow-mart-3d",
+  "version": "1.0.0",
+  "description": "喵屋便利店 —— 用 Three.js 程序化生成的雨夜 3D 小镇",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test:snake": "node snake-race/tools/selftest.mjs",
+    "bench:snake": "node snake-race/tools/bench.mjs 60 3000 4",
+    "bench:snake:head": "node snake-race/tools/headtohead.mjs 200",
+    "film:shot": "node attention-film/tools/shot.mjs",
+    "film:layout": "node attention-film/tools/layout.mjs",
+    "film:music": "node attention-film/tools/music.mjs",
+    "film:capture": "node attention-film/tools/capture.mjs 30 ../release/frames",
+    "film:encode": "node attention-film/tools/encode.mjs 30 ../release/frames ../release/attention-film.mp4",
+    "film:build": "npm run build && npm run film:music && npm run film:capture && npm run film:encode",
+    "test:iptv": "node iptv-player/tools/selftest.mjs",
+    "iptv:shot": "node iptv-player/tools/shot.mjs",
+    "iptv:serve": "node iptv-player/tools/serve.mjs",
+    "iptv:verify": "node iptv-player/tools/shot.mjs",
+    "iptv:single": "vite build --config vite.iptv-single.config.js && node iptv-player/tools/check-single.mjs"
+  },
+  "keywords": [
+    "three.js",
+    "webgl",
+    "procedural",
+    "canvas",
+    "animation",
+    "iptv",
+    "hls"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "hls.js": "^1.7.4",
+    "puppeteer-core": "^25.16.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
+  }
+}

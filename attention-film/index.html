@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>60 秒看懂 Self-Attention → Transformer</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="stage">
+      <canvas id="film" width="1920" height="1080"></canvas>
+    </div>
+
+    <div id="controls">
+      <button id="play" title="播放 / 暂停 (空格)">⏸</button>
+      <input id="seek" type="range" min="0" max="60" step="0.01" value="0" />
+      <span id="clock">00:00 / 01:00</span>
+      <button id="mute" title="音乐开关 (M)">♪</button>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

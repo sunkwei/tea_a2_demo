@@ -1,0 +1,37 @@
+; GoDot · 三国 2.5D 肉鸽 —— Godot 4.3 工程配置
+; 引擎: Godot 4.3 stable (MIT)
+; 美术: Tiny Swords / Kenney (CC0)，字体: 缝合像素字体 (OFL 1.1)
+
+config_version=5
+
+[application]
+
+config/name="GoDot · 三国肉鸽"
+config/description="三国背景 2.5D 俯视角肉鸽 —— 第一关「黄巾之乱 · 广宗道」"
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Data="*res://scripts/data.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[gui]
+
+theme/custom_font="res://assets/fonts/fusion-pixel-12px-zh_hans.ttf"
+theme/default_font_subpixel_positioning=0
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+anti_aliasing/quality/msaa_2d=0
+environment/defaults/default_clear_color=Color(0.09, 0.1, 0.13, 1)

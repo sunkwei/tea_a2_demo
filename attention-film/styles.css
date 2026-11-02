@@ -1,0 +1,75 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #05080f;
+  color: #e8eefb;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#film {
+  display: block;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  background: #070b14;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+}
+
+#controls {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(14, 20, 34, 0.78);
+  border: 1px solid rgba(120, 150, 190, 0.22);
+  backdrop-filter: blur(6px);
+  font-size: 13px;
+  color: #9fb0cd;
+  z-index: 10;
+  transition: opacity 0.25s ease;
+}
+
+body.clean #controls {
+  display: none;
+}
+
+#controls button {
+  background: transparent;
+  border: none;
+  color: #cfdcf2;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+#controls button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+#seek {
+  width: min(46vw, 520px);
+  accent-color: #22d3ee;
+}
+
+#clock {
+  font-variant-numeric: tabular-nums;
+  min-width: 108px;
+  text-align: center;
+}

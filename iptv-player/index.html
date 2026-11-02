@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>📺 IPTV 剧场 · 在线直播播放器</title>
+    <meta name="description" content="聚合 GitHub 上的公开直播源，支持 M3U 列表自动更新、频道搜索、收藏与 EPG。" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-logo">📺</span>
+          <span class="brand-text">
+            <b>IPTV 剧场</b>
+            <small>公开直播源 · 自动更新</small>
+          </span>
+        </div>
+
+        <div class="search">
+          <input id="search" type="search" autocomplete="off" placeholder="搜索频道 / 台名…（按 / 聚焦）" />
+          <span id="search-count" class="search-count"></span>
+        </div>
+
+        <div class="top-actions">
+          <button id="btn-update" class="btn" title="立即检查所有源的更新">⟳ 更新</button>
+          <button id="btn-sources" class="btn" title="管理直播源">📡 源</button>
+          <button id="btn-settings" class="btn" title="设置">⚙</button>
+          <button id="btn-drawer-close" class="btn btn-close" hidden>✕</button>
+        </div>
+      </header>
+
+      <div id="status-bar" class="status-bar">
+        <span id="status-text">正在初始化…</span>
+        <div class="progress"><i id="progress-fill"></i></div>
+      </div>
+
+      <main class="layout">
+        <aside class="sidebar">
+          <div class="side-block">
+            <h3>视图</h3>
+            <ul id="view-filters" class="filter-list">
+              <li><button class="filter active" data-view="all">全部频道</button></li>
+              <li><button class="filter" data-view="fav">★ 收藏</button></li>
+              <li><button class="filter" data-view="recent">🕘 最近观看</button></li>
+              <li><button class="filter" data-view="offline">⚠ 失效频道</button></li>
+            </ul>
+          </div>
+          <div class="side-block">
+            <h3>分类</h3>
+            <ul id="group-filters" class="filter-list scroll"></ul>
+          </div>
+          <div class="side-block">
+            <h3>国家 / 地区</h3>
+            <ul id="country-filters" class="filter-list scroll"></ul>
+          </div>
+        </aside>
+
+        <section class="stage">
+          <div class="player-card">
+            <div class="player-box">
+              <video id="video" playsinline controls preload="none"></video>
+              <div id="player-badge" class="player-badge">选择一个频道开始播放</div>
+              <div id="player-spinner" class="spinner" hidden></div>
+            </div>
+            <div class="player-meta">
+              <div class="meta-main">
+                <h2 id="now-title">未播放</h2>
+                <p id="now-sub">频道列表来自 GitHub 上的公开项目，点右侧频道即可播放</p>
+              </div>
+              <div class="meta-actions">
+                <button id="btn-fav" class="btn ghost" title="收藏（F）">☆ 收藏</button>
+                <button id="btn-prev" class="btn ghost" title="上一个频道（←）">⏮</button>
+                <button id="btn-next" class="btn ghost" title="下一个频道（→）">⏭</button>
+                <select id="quality" class="select" title="清晰度" hidden></select>
+              </div>
+            </div>
+            <div id="epg-strip" class="epg-strip" hidden></div>
+          </div>
+
+          <div class="channel-head">
+            <h2 id="channel-title">频道</h2>
+            <div class="head-tools">
+              <button id="btn-health" class="btn small" title="批量检测当前列表中频道是否可用">🩺 体检</button>
+              <label class="switch">
+                <input type="checkbox" id="chk-hide-offline" />
+                <span>隐藏失效</span>
+              </label>
+              <select id="sort" class="select">
+                <option value="name">按名称</option>
+                <option value="group">按分类</option>
+                <option value="source">按来源</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="channels" class="grid"></div>
+          <div id="empty" class="empty" hidden>没有匹配的频道</div>
+        </section>
+      </main>
+    </div>
+
+    <!-- 侧边抽屉：源管理 / 设置 -->
+    <div id="scrim" class="scrim" hidden></div>
+    <aside id="drawer" class="drawer" hidden>
+      <div class="drawer-head">
+        <h2 id="drawer-title">源管理</h2>
+      </div>
+      <div id="drawer-body" class="drawer-body"></div>
+    </aside>
+
+    <div id="toasts" class="toasts"></div>
+
+    <!-- 双击（file://）打开时浏览器会拒绝加载外部 ES 模块，这里做个自检并给出正确用法 -->
+    <script>
+      setTimeout(function () {
+        if (window.__iptv) return;
+        var el = document.querySelector('#status-text');
+        if (!el) return;
+        var single = 'dist-single/iptv-player.html';
+        el.innerHTML =
+          '⚠ 页面没能初始化：直接双击 index.html 时是 file:// 协议，浏览器不允许加载 ES 模块。<br>' +
+          '请改用下面任一方式：' +
+          '<br>① 运行 <b>npm run dev</b> 后打开 http://127.0.0.1:5173/iptv-player/' +
+          '<br>② 双击单文件版：<a href="' + single + '" style="color:#4ea8ff">' + single + '</a>' +
+          '（没有的话先执行 <b>npm run iptv:single</b> 生成）';
+        var bar = document.querySelector('#progress-fill');
+        if (bar) bar.style.background = '#ff5f6d';
+      }, 2500);
+    </script>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
