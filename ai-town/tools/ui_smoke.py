@@ -67,10 +67,21 @@ def main():
     app._refresh_all()
     print("交易建造 OK")
 
-    # 地图点击
+    # 地图点击 + 档案页雇工
     if app.game.state.npcs:
-        app._on_npc_click(app.game.state.npcs[0].id)
+        npc = app.game.state.npcs[0]
+        app._on_npc_click(npc.id)
+        app.update()
         print("地图点击 OK")
+        if app.game.state.buildings:
+            app._do_hire(npc.id, app.game.state.buildings[0].id)
+            app.update()
+            print("雇工 OK")
+
+    # 市场页签（行情新闻 / 走俏滞销）
+    app._refresh_market()
+    app.update()
+    print("市场页签 OK")
 
     app.update()
     app.destroy()

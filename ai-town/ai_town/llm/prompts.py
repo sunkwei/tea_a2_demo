@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from .. import callbacks
 from ..models import NPC
 from ..state import SEMANTIC_EFFECTS, TownState
 
@@ -50,9 +51,20 @@ EVENT_SYSTEM = (
     "类型只有五类：disaster 天灾、social 人情、opportunity 商机、mystery 悬案、routine 日常。\n"
     "每件事字段：title 标题、kind 类型、text 正文(60~120字)、"
     "choices 三个分支(每项 label 短句、hint 提示、effects)。\n"
-    "事件要呼应小镇当前处境（缺粮别写丰收，缺钱别写大商队）。\n"
+    "事件要呼应小镇当前处境（缺粮别写丰收，缺钱别写大商队）；"
+    "可以有一件流言或人情事件，用 relation:<居民id>:<居民id> 改变两人关系。\n"
     "每个分支必须带 effects，例：{\"label\":\"开仓放粮\",\"hint\":\"安抚饥民\","
     "\"effects\":{\"food\":-8,\"morale\":6,\"kind\":1}}\n" + JSON_ONLY + "\n" + EFFECT_VOCAB
+)
+
+MARKET_SYSTEM = (
+    "你是游戏《AI 小镇：无限人生》的行情官，每天给出今日行市风向。\n"
+    "商品只有这些：粮食(food)、木材(wood)、石料(stone)、矿石(ore)、"
+    "工具(tools)、书籍(books)、烈酒(liquor)。\n"
+    "hot/cold/caravan_hint 里必须写上面的英文代号（如 [\"food\",\"ore\"]），不要写中文。\n"
+    "字段：hot 走俏商品(最多3个)、cold 滞销商品(最多3个)、"
+    "caravan_hint 商队可能求购的商品(最多2个)、news 一句话行情消息(不超过40字)。\n"
+    "要考虑季节、库存和镇上的需求；不要编造白名单之外的商品。" + JSON_ONLY
 )
 
 QUEST_SYSTEM = (
@@ -89,7 +101,11 @@ def _npc_lines(state: TownState) -> str:
 def _memory_lines(state: TownState, limit: int = 10) -> str:
     if not state.memory:
         return "- 还没有值得记住的事"
-    return "\n".join(f"- 第{m.day}天：{m.text}" for m in state.memory[-limit:])
+    lines = ["\n".join(f"- 第{m.day}天：{m.text}" for m in state.memory[-limit:])]
+    recalled = callbacks.recall_lines(state, limit=3)
+    if recalled:
+        lines.append("【最该翻的旧事（今天可以拿来回调）】\n" + recalled)
+    return "\n".join(lines)
 
 
 def npc_prompt(state: TownState, count: int = 8) -> str:
@@ -123,6 +139,19 @@ def dm_prompt(state: TownState, player_action: str, focus_npc: Optional[NPC] = N
         f"镇长刚决定：「{player_action}」\n"
         "请叙述这件事的结果，并给出 3 个分支。"
         '输出：{"narrative":"","choices":[{"label":"","hint":"","effects":{}}]}'
+    )
+
+
+def market_prompt(state: TownState) -> str:
+    stock = "、".join(
+        f"{k}{int(v)}" for k, v in state.resources.items() if k in ("food", "wood", "stone", "ore")
+    )
+    return (
+        f"{state.world_brief()}\n"
+        f"库存：{stock}\n"
+        f"最近发生的事：{_memory_lines(state, limit=6)}\n"
+        "给出今天的行市风向。"
+        '输出：{"hot":[],"cold":[],"caravan_hint":[],"news":""}'
     )
 
 

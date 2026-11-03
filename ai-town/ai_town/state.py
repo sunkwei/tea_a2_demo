@@ -8,13 +8,14 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from .economy import GOODS, Caravan, Market, good_name, make_caravan
+from .economy import GOODS, RAW_GOODS, Caravan, Market, good_name, make_caravan
 from .models import (
     RESOURCE_LABELS,
     SEASONS,
     WEATHERS,
     Building,
     EventCard,
+    MarketBrief,
     MemoryEntry,
     NPC,
     Quest,
@@ -178,6 +179,8 @@ class TownState:
         self.log: List[Dict[str, Any]] = []
         self.caravan: Optional[Caravan] = None
         self.caravan_timer = 3
+        #: 今日行情风向（LLM 提方向，状态机定数字）
+        self.market_brief: Optional[MarketBrief] = None
         self.over = False
         self.ending: Optional[Dict[str, Any]] = None
         self.map_size = 6
@@ -251,8 +254,15 @@ class TownState:
                 for sub, val in SEMANTIC_EFFECTS[low].items():
                     self._apply_scalar(sub, val, changes)
                 continue
-            if low.startswith("risk"):
-                self._apply_risk(low.split(":", 1)[1] if ":" in low else "high", changes)
+            if low == "risk":
+                # 写法一：{"risk": "low"} —— 值就是风险等级
+                level = str(raw_val).lower() if isinstance(raw_val, str) else "high"
+                if level not in ("low", "high", "none"):
+                    level = "high"
+                self._apply_risk(level, changes)
+                continue
+            if low.startswith("risk:"):
+                self._apply_risk(low.split(":", 1)[1].lower(), changes)
                 continue
             if low.startswith("trust:"):
                 npc = self.find_npc(key.split(":", 1)[1])
@@ -353,7 +363,10 @@ class TownState:
             changes.append(f"{good_name(key)} {amount:+d}")
 
     def _apply_risk(self, level: str, changes: List[str]) -> None:
-        rng = self.rng.spawn(f"risk-{self.day}-{len(self.log)}")
+        # 每次风险判定都要用不同的子流，否则同一天所有风险会掷出同一个结果
+        seq = getattr(self, "_risk_seq", 0)
+        self._risk_seq = seq + 1
+        rng = self.rng.spawn(f"risk-{self.day}-{seq}")
         if level == "none":
             return
         if level == "low":
@@ -400,6 +413,97 @@ class TownState:
             skill=rng.randint(1, 3),
             home_tile=rng.randrange(self.map_size * self.map_size),
         )
+
+    # ------------------------------------------------------------------
+    # 行情风向落地
+    # ------------------------------------------------------------------
+    #: 走俏商品每天涨的比例
+    HOT_BIAS = 0.07
+    #: 滞销商品每天跌的比例
+    COLD_BIAS = -0.06
+
+    def apply_market_brief(self, brief: Optional[MarketBrief]) -> List[str]:
+        """把 LLM 的行情风向落地成价格偏置与商队需求。
+
+        LLM 只能决定"什么货走俏"；偏置幅度、求购数量都是这里说了算。
+        """
+        notes: List[str] = []
+        self.market_brief = brief
+        if brief is None:
+            return notes
+        bias: Dict[str, float] = {}
+        for good in brief.hot:
+            bias[good] = self.HOT_BIAS
+        for good in brief.cold:
+            if good not in bias:
+                bias[good] = self.COLD_BIAS
+        self.market.bias = bias
+        if brief.hot:
+            notes.append("走俏：" + "、".join(good_name(g) for g in brief.hot))
+        if brief.cold:
+            notes.append("滞销：" + "、".join(good_name(g) for g in brief.cold))
+        if brief.caravan_hint and self.caravan is not None:
+            for good in brief.caravan_hint:
+                if good in RAW_GOODS and good not in self.caravan.demands:
+                    self.caravan.add_demand(good, 10)
+                    notes.append(f"{self.caravan.name}开始求购{good_name(good)}")
+        if brief.news:
+            notes.append(brief.news)
+            self.add_log(brief.news, "market")
+        self.add_memory("market", "行情：" + "，".join(notes[:2]) if notes else "行情无异", ["market"])
+        return notes
+
+    # ------------------------------------------------------------------
+    # 关系网演化
+    # ------------------------------------------------------------------
+    def _bump_relation(self, a: NPC, b: NPC, delta: int) -> None:
+        a.relations[b.id] = max(-100, min(100, a.relations.get(b.id, 0) + delta))
+        b.relations[a.id] = max(-100, min(100, b.relations.get(a.id, 0) + delta))
+
+    def evolve_relations(self, rng: RNG) -> List[str]:
+        """关系网每日演化：同工相熟、久不往来会淡、流言会伤信任。"""
+        notes: List[str] = []
+        alive = [n for n in self.npcs if n.alive]
+        if len(alive) < 2:
+            return notes
+
+        # 1) 同在一处做工 -> 相熟
+        for b in self.buildings:
+            staff = [self.find_npc(s) for s in b.staff]
+            staff = [n for n in staff if n and n.alive]
+            for i in range(len(staff)):
+                for j in range(i + 1, len(staff)):
+                    if rng.chance(0.55):
+                        self._bump_relation(staff[i], staff[j], rng.randint(1, 2))
+
+        # 2) 交好的替你说话，结怨的拆台，久不来往的自然变淡
+        for a in alive:
+            for rid, val in list(a.relations.items()):
+                other = self.find_npc(rid)
+                if other is None or not other.alive:
+                    continue
+                if val >= 55 and rng.chance(0.25):
+                    a.trust = clamp(a.trust + 1, 0, 100)
+                    other.trust = clamp(other.trust + 1, 0, 100)
+                elif val <= -35 and rng.chance(0.25):
+                    a.trust = clamp(a.trust - 1, 0, 100)
+                    other.trust = clamp(other.trust - 1, 0, 100)
+                elif rng.chance(0.06):
+                    self._bump_relation(a, other, -1)
+
+        # 3) 流言：不满的人到处说镇长的坏话
+        unhappy = [n for n in alive if n.trust < 50]
+        if unhappy and rng.chance(0.35):
+            teller = rng.choice(unhappy)
+            others = [n for n in alive if n.id != teller.id]
+            if others:
+                listener = rng.choice(others)
+                self._bump_relation(teller, listener, rng.randint(2, 6))
+                listener.trust = clamp(listener.trust - rng.randint(1, 3), 0, 100)
+                teller.mood = clamp(teller.mood - 1, 0, 100)
+                self.bump_behavior("rumor")
+                notes.append(f"镇上传开了关于镇长的闲话（{listener.name}听说了）")
+        return notes
 
     # ------------------------------------------------------------------
     # 建筑
@@ -589,7 +693,8 @@ class TownState:
         # 商队
         self.caravan_timer -= 1
         if self.caravan is None and self.caravan_timer <= 0:
-            self.caravan = make_caravan(self.rng.spawn(f"caravan-{self.day}"), self.day)
+            hint = list(self.market_brief.caravan_hint) if self.market_brief else []
+            self.caravan = make_caravan(self.rng.spawn(f"caravan-{self.day}"), self.day, demand_hint=hint)
             self.caravan_timer = self.rng.randint(3, 6)
             report["events"].append(f"{self.caravan.name}抵达：求购 {self.caravan.demand_text()}")
         elif self.caravan is not None:
@@ -597,6 +702,12 @@ class TownState:
 
         # 随机小事
         self._random_events(rng, report)
+
+        # 关系网演化
+        rel_notes = self.evolve_relations(rng)
+        if rel_notes:
+            report["notes"].extend(rel_notes)
+            report["events"].extend(rel_notes)
 
         report["notes"].append(f"民心 {self.morale}，人口 {self.population}")
         return report
@@ -700,6 +811,7 @@ class TownState:
             "flags": dict(self.flags),
             "log": list(self.log),
             "market": self.market.to_dict(),
+            "market_brief": self.market_brief.to_dict() if self.market_brief else None,
             "caravan": self.caravan.to_dict() if self.caravan else None,
             "caravan_timer": self.caravan_timer,
             "over": self.over,
@@ -728,6 +840,8 @@ class TownState:
         s.flags = dict(d.get("flags") or {})
         s.log = list(d.get("log") or [])
         s.market = Market.from_dict(d.get("market") or {}, s.rng.spawn("market"))
+        if d.get("market_brief"):
+            s.market_brief = MarketBrief.from_dict(d["market_brief"])
         s.caravan = Caravan.from_dict(d["caravan"]) if d.get("caravan") else None
         s.caravan_timer = int(d.get("caravan_timer", 3))
         s.over = bool(d.get("over", False))

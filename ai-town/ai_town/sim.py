@@ -77,6 +77,11 @@ def run(
             _out(f"  结算：{notes}")
             for e in report.get("events", []):
                 _out(f"  · {e}")
+            for mn in report.get("market_notes") or []:
+                _out(f"  行情：{mn}")
+            cb = report.get("callback") or {}
+            if cb.get("title"):
+                _out(f"  【旧事重现】{cb.get('title')}：{str(cb.get('text', ''))[:60]}")
             _out("")
 
     ending = game.end_run()

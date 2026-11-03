@@ -324,3 +324,39 @@ class ActionOutcome:
             "source": self.source,
             "event": self.event.to_dict() if self.event else None,
         }
+
+
+@dataclass
+class MarketBrief:
+    """每日行情风向：LLM 只能从商品白名单里挑，数值由状态机换算。
+
+    hot   走俏货物（价格偏置 +）
+    cold  滞销货物（价格偏置 -）
+    caravan_hint 商队可能求购的货物（白名单，最多 2 种）
+    news  一句行情叙事（给玩家看的"消息面"）
+    """
+
+    hot: List[str] = field(default_factory=list)
+    cold: List[str] = field(default_factory=list)
+    caravan_hint: List[str] = field(default_factory=list)
+    news: str = ""
+    source: str = "template"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "hot": list(self.hot),
+            "cold": list(self.cold),
+            "caravan_hint": list(self.caravan_hint),
+            "news": self.news,
+            "source": self.source,
+        }
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "MarketBrief":
+        return cls(
+            hot=list(d.get("hot") or []),
+            cold=list(d.get("cold") or []),
+            caravan_hint=list(d.get("caravan_hint") or []),
+            news=str(d.get("news", "")),
+            source=str(d.get("source", "template")),
+        )

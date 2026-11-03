@@ -18,7 +18,7 @@ class TestGameLoop(unittest.TestCase):
         st = self.game.state
         self.assertEqual(len(st.npcs), 8)
         self.assertGreaterEqual(len(st.buildings), 1)
-        self.assertEqual(len(st.events), 4)
+        self.assertTrue(3 <= len(st.events) <= 5, len(st.events))
         self.assertEqual(len(st.quests), 1)
         for ev in st.events:
             self.assertTrue(ev.text)
@@ -56,7 +56,8 @@ class TestGameLoop(unittest.TestCase):
         report = self.game.advance_day()
         self.assertIn("notes", report)
         self.assertNotEqual(self.game.state.day, day)
-        self.assertEqual(len(self.game.state.events), 4)
+        self.assertTrue(3 <= len(self.game.state.events) <= 5, len(self.game.state.events))
+        self.assertIn("market", report)
 
     def test_memory_grows(self):
         before = len(self.game.state.memory)

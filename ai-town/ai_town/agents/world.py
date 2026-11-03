@@ -11,8 +11,8 @@ from typing import List, Optional, Tuple
 from ..fallback.narrator import Narrator
 from ..llm import client as llm_client
 from ..llm import prompts
-from ..llm.parsing import coerce_action, coerce_events, coerce_npcs, sanitize_effects
-from ..models import Choice, EventCard, NPC, Quest
+from ..llm.parsing import coerce_action, coerce_events, coerce_market, coerce_npcs, sanitize_effects
+from ..models import Choice, EventCard, MarketBrief, NPC, Quest
 from ..state import TownState
 
 
@@ -115,6 +115,22 @@ class AgentLayer:
         narrative, choices = self.narrator.narrate(state, action, focus)
         self.last_source = "template"
         return narrative, choices, "template"
+
+    # ------------------------------------------------------------------
+    # 行情风向（经济系统里 LLM 的位置）
+    # ------------------------------------------------------------------
+    def generate_market_brief(self, state: TownState) -> Tuple[MarketBrief, str]:
+        """LLM 只说"什么货走俏"，价格与数量由状态机换算。"""
+        if self._online():
+            data = self._json(prompts.MARKET_SYSTEM, prompts.market_prompt(state))
+            brief = coerce_market(data) if data is not None else None
+            if brief is not None:
+                self.last_source = "llm"
+                return brief, "llm"
+            self.last_error = self.last_error or "行情输出不可用"
+        brief = self.narrator.market_brief(state)
+        self.last_source = "template"
+        return brief, "template"
 
     # ------------------------------------------------------------------
     # 主线

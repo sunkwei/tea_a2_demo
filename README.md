@@ -212,7 +212,8 @@ cd ai-town
 python main.py                 # 启动图形界面
 python main.py --offline       # 不联网的离线版
 python main.py --sim --days 20 # 无头模拟，打印 20 天流水账
-python main.py --selftest      # 77 项单元测试
+python main.py --autoplay --days 30   # 全 NPC 自动玩：AI 当镇长，世界自己跑
+python main.py --selftest      # 单元测试
 python main.py --doctor        # 检查 LLM 连通性
 ```
 

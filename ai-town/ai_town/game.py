@@ -13,6 +13,7 @@ import os
 import random
 from typing import Any, Dict, List, Optional, Tuple
 
+from . import callbacks
 from .agents import AgentLayer
 from .endings import evaluate
 from .fallback.narrator import Narrator
@@ -92,7 +93,10 @@ class Game:
         quest, qsrc = self.agents.generate_quest(state)
         state.quests = [quest]
         self.last_source = qsrc
-        events, esrc = self.agents.generate_events(state, count=4)
+        # 开局先定今天的行情风向（市场页签第一天就有消息看）
+        brief, _bsrc = self.agents.generate_market_brief(state)
+        state.apply_market_brief(brief)
+        events, esrc = self.agents.generate_events(state, count=self.daily_event_count())
         state.events = events
         self.last_source = esrc
         state.add_log(f"今天有 {len(events)} 件事等你拿主意。", "system")
@@ -308,15 +312,32 @@ class Game:
     # ------------------------------------------------------------------
     # 推进一天
     # ------------------------------------------------------------------
+    def daily_event_count(self) -> int:
+        """每天 3~5 件事，随机但可复现（同 seed 同操作序列 => 同样结果）。"""
+        return self.state.rng.spawn(f"evcount-{self.state.day}").randint(3, 5)
+
     def advance_day(self) -> Dict[str, Any]:
         state = self.state
+        # 1) 行情风向：LLM 只说方向，价格偏置与求购数量由状态机定
+        brief, msrc = self.agents.generate_market_brief(state)
+        market_notes = state.apply_market_brief(brief)
+        # 2) 推进一天（行情漂移带上偏置，商队带上求购提示）
         report = state.tick_day()
         state.advance_calendar()
-        events, source = self.agents.generate_events(state, count=4)
+        # 3) 今天的事：3~5 件随机
+        events, source = self.agents.generate_events(state, count=self.daily_event_count())
+        # 4) 翻旧账：把玩家做过的事变成今天找上门的事件
+        cb = callbacks.maybe_inject(state, events, state.rng.spawn(f"callback-{state.day}"))
+        if cb is not None:
+            state.add_log(f"【{cb.title}】", "event")
         state.events = events
         self.last_source = source
         report["new_events"] = events
         report["source"] = source
+        report["market"] = brief.to_dict() if brief else {}
+        report["market_notes"] = market_notes
+        report["callback"] = cb.to_dict() if cb else None
+        report["market_source"] = msrc
         state.add_log(
             f"第{state.day}天开始：{state.season}季，{state.weather}。人口 {state.population}，民心 {state.morale}。",
             "day",

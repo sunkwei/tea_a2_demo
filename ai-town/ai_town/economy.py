@@ -78,6 +78,10 @@ class Caravan:
             goodwill=int(d.get("goodgoodwill", d.get("goodwill", 0))),
         )
 
+    def add_demand(self, good: str, qty: int) -> None:
+        """行情风向追加求购（数量由状态机说了算）。"""
+        self.demands[good] = max(0, self.demands.get(good, 0) + int(qty))
+
     def demand_text(self) -> str:
         parts = [f"{good_name(g)}×{q}" for g, q in self.demands.items()]
         return "、".join(parts)
@@ -90,6 +94,8 @@ class Market:
 
     def __init__(self, rng: Optional[RNG] = None, prices: Optional[Dict[str, float]] = None):
         self.rng = rng or RNG(0)
+        #: 每日价格偏置（来自 LLM 行情风向），单位是每天的涨跌比例
+        self.bias: Dict[str, float] = {}
         if prices:
             self.prices = {k: float(v) for k, v in prices.items()}
         else:
@@ -125,7 +131,8 @@ class Market:
             base = float(GOODS.get(good, {"base": 5})["base"])
             step = self.rng.uniform(-0.12, 0.12)
             mod = float((modifiers or {}).get(good, 0.0))
-            newp = self.prices[good] * (1 + step) + mod
+            bias = float(self.bias.get(good, 0.0))
+            newp = self.prices[good] * (1 + step + bias) + mod
             self.prices[good] = max(base * 0.5, min(base * 2.4, newp))
         for good in RAW_GOODS:
             t = self.trend(good)
@@ -136,21 +143,39 @@ class Market:
         return notes
 
     def to_dict(self) -> Dict[str, Any]:
-        return {"prices": dict(self.prices)}
+        return {"prices": dict(self.prices), "bias": dict(self.bias)}
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any], rng: Optional[RNG] = None) -> "Market":
-        return cls(rng=rng, prices=(d or {}).get("prices"))
+        m = cls(rng=rng, prices=(d or {}).get("prices"))
+        raw = (d or {}).get("bias") or {}
+        if isinstance(raw, dict):
+            m.bias = {str(k): float(v) for k, v in raw.items() if isinstance(v, (int, float))}
+        return m
 
 
-def make_caravan(rng: RNG, day: int, price_hint: Optional[Dict[str, float]] = None) -> Caravan:
-    """生成一支商队。"""
+def make_caravan(
+    rng: RNG,
+    day: int,
+    price_hint: Optional[Dict[str, float]] = None,
+    demand_hint: Optional[List[str]] = None,
+) -> Caravan:
+    """生成一支商队。
+
+    demand_hint：LLM 行情风向点名的货物会被优先写进求购清单，
+    但具体数量仍然由这里的确定性随机决定。
+    """
     name = rng.choice(CARAVAN_NAMES)
     n_demand = 1 if rng.chance(0.65) else 2
     wants = rng.sample(RAW_GOODS, n_demand)
     demands: Dict[str, int] = {}
     for g in wants:
         demands[g] = rng.randint(8, 24)
+    for hint in list(demand_hint or [])[:2]:
+        if hint in demands:
+            demands[hint] = max(demands[hint], rng.randint(14, 28))
+        elif hint in RAW_GOODS and len(demands) < 3:
+            demands[hint] = rng.randint(10, 24)
     offers: Dict[str, int] = {}
     n_offer = 1 if rng.chance(0.7) else 2
     for g in rng.sample(CARAVAN_CARGO, n_offer):

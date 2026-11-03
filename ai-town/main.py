@@ -5,6 +5,7 @@
     python main.py                 # 启动图形界面
     python main.py --offline       # 图形界面，但不用 LLM（纯程序化叙述）
     python main.py --sim --days 20 # 无头模拟，打印流水账
+    python main.py --autoplay --days 30 # 全 NPC 自动玩（AI 当镇长）
     python main.py --selftest      # 跑单元测试
     python main.py --doctor        # 检查 LLM 连通性
 """
@@ -23,6 +24,9 @@ def main() -> int:
     ap.add_argument("--name", default="临溪镇", help="小镇名字")
     ap.add_argument("--offline", action="store_true", help="不调用 LLM，使用程序化叙述器")
     ap.add_argument("--sim", action="store_true", help="无头模拟")
+    ap.add_argument("--autoplay", action="store_true", help="全 NPC 自动玩（AI 当镇长）")
+    ap.add_argument("--policy", default="auto", choices=["auto", "llm", "rule"],
+                    help="自动玩策略：auto=LLM 优先失败回落规则，rule=纯规则，llm=只用 LLM")
     ap.add_argument("--days", type=int, default=10, help="模拟天数")
     ap.add_argument("--selftest", action="store_true", help="运行单元测试")
     ap.add_argument("--doctor", action="store_true", help="检查 LLM 连通性")
@@ -61,6 +65,13 @@ def main() -> int:
         from ai_town.sim import run
 
         run(days=args.days, seed=args.seed or 20241103, offline=args.offline, verbose=not args.quiet)
+        return 0
+
+    if args.autoplay:
+        from ai_town.autoplay import run
+
+        run(days=args.days, seed=args.seed or 20241103, offline=args.offline,
+            policy=args.policy, verbose=not args.quiet)
         return 0
 
     from ai_town.ui.app import TownApp

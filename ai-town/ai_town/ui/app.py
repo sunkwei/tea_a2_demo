@@ -126,7 +126,7 @@ class TownApp(tk.Tk):
         mid.columnconfigure(0, weight=1)
 
         self.text = ScrolledText(mid, bg=T.BG_CARD, fg=T.FG, font=T.FONT_STORY,
-                                 relief="flat", bd=0, padx=14, pady=10,
+                                 relief="flat", bd=0, padx=14, pady=10, width=46,
                                  wrap="word", insertbackground=T.FG, spacing1=4, spacing3=6)
         self.text.grid(row=0, column=0, sticky="nsew")
         self._init_tags()
@@ -162,14 +162,14 @@ class TownApp(tk.Tk):
 
         self.people_list = tk.Listbox(self.nb, bg=T.BG_CARD, fg=T.FG, font=T.FONT,
                                       relief="flat", bd=0, highlightthickness=0,
-                                      selectbackground=T.ACCENT_SOFT)
+                                      width=18, selectbackground=T.ACCENT_SOFT)
         self.people_list.bind("<<ListboxSelect>>", self._on_people_select)
         self.nb.add(self.people_list, text="人物")
 
         self.detail_frame = tk.Frame(self.nb, bg=T.BG_CARD)
         self.nb.add(self.detail_frame, text="档案")
         self.people_detail = tk.Text(self.detail_frame, bg=T.BG_CARD, fg=T.FG, font=T.FONT,
-                                      relief="flat", bd=0, padx=10, pady=8,
+                                      relief="flat", bd=0, padx=10, pady=8, width=22,
                                       wrap="word", height=12, state="disabled")
         self.people_detail.pack(fill="both", expand=True, padx=6, pady=6)
         self.hire_frame = tk.Frame(self.detail_frame, bg=T.BG_CARD)
@@ -177,7 +177,7 @@ class TownApp(tk.Tk):
 
         self.events_list = tk.Listbox(self.nb, bg=T.BG_CARD, fg=T.FG, font=T.FONT,
                                       relief="flat", bd=0, highlightthickness=0,
-                                      selectbackground=T.ACCENT_SOFT)
+                                      width=18, selectbackground=T.ACCENT_SOFT)
         self.events_list.bind("<<ListboxSelect>>", self._on_event_select)
         self.nb.add(self.events_list, text="今日事件")
 

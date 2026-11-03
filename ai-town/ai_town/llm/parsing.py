@@ -9,7 +9,7 @@ import json
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from ..models import Choice, EventCard, NPC
+from ..models import Choice, EventCard, MarketBrief, NPC
 from ..state import SEMANTIC_EFFECTS
 
 FENCE_RE = re.compile(r"```(?:json|JSON)?\s*(.*?)```", re.S)
@@ -25,6 +25,25 @@ PREFIX_EFFECT_KEYS = (
 )
 
 EVENT_KINDS = {"disaster", "social", "opportunity", "mystery", "routine"}
+
+#: 行情风向允许出现的商品白名单（LLM 不能编造不存在的商品）
+MARKET_GOODS = ("food", "wood", "stone", "ore", "tools", "books", "liquor")
+
+#: 中文名 -> 商品代号（小模型很爱写中文，认不出来就等于没给）
+MARKET_ALIASES: Dict[str, Tuple[str, ...]] = {
+    "food": ("粮食", "新粮", "口粮", "谷物", "米", "粮"),
+    "wood": ("木材", "木料", "木头", "木"),
+    "stone": ("石料", "石材", "石头", "石"),
+    "ore": ("矿石", "铁矿", "铜矿", "矿"),
+    "tools": ("工具", "铁器", "农具", "器具"),
+    "books": ("书籍", "书"),
+    "liquor": ("烈酒", "酒"),
+}
+
+#: 行情消息里暗示"走俏"的词
+HOT_WORDS = ("走俏", "看涨", "涨价", "抢手", "紧缺", "紧张", "需求旺", "缺货", "看紧")
+#: 行情消息里暗示"滞销"的词
+COLD_WORDS = ("滞销", "跌价", "偏弱", "走低", "便宜", "无人问津", "积压", "看跌")
 
 KIND_ALIASES = {
     "天灾": "disaster", "灾害": "disaster", "灾难": "disaster", "disaster": "disaster",
@@ -445,6 +464,88 @@ def coerce_events(data: Any, day: int = 1, source: str = "llm") -> List[EventCar
             )
         )
     return out
+
+
+def _match_good(text: Any) -> str:
+    """把"粮食""石料""这种写法认成商品代号；认不出返回空串。"""
+    t = _as_text(text).lower()
+    if not t:
+        return ""
+    if t in MARKET_GOODS:
+        return t
+    for key, names in MARKET_ALIASES.items():
+        for n in names:
+            if n in t:
+                return key
+    return ""
+
+
+def _infer_from_news(news: str) -> Tuple[List[str], List[str]]:
+    """模型只给了行情消息时，从消息里反推走俏/滞销。"""
+    hot: List[str] = []
+    cold: List[str] = []
+    if not news:
+        return hot, cold
+    for clause in re.split(r"[，。；、,.!?！？]", news):
+        if not clause:
+            continue
+        goods = []
+        for key, names in MARKET_ALIASES.items():
+            if any(n in clause for n in names):
+                goods.append(key)
+        if not goods:
+            continue
+        if any(w in clause for w in HOT_WORDS):
+            for g in goods:
+                if g not in hot:
+                    hot.append(g)
+        elif any(w in clause for w in COLD_WORDS):
+            for g in goods:
+                if g not in cold:
+                    cold.append(g)
+    return hot[:3], cold[:3]
+
+
+def coerce_market(data: Any) -> Optional[MarketBrief]:
+    """把 LLM 的行情输出收敛成白名单内的 MarketBrief。
+
+    LLM 只能决定"什么货走俏、什么货滞销、商队可能收什么"，
+    具体价格与数量由状态机算。
+    """
+    if not isinstance(data, dict):
+        return None
+
+    def pick(raw: Any, limit: int) -> List[str]:
+        if isinstance(raw, str):
+            raw = [raw]
+        out: List[str] = []
+        if not isinstance(raw, list):
+            return out
+        for item in raw:
+            if isinstance(item, dict):
+                item = item.get("good") or item.get("name") or item.get("商品") or ""
+            key = _match_good(item)
+            if key and key not in out:
+                out.append(key)
+            if len(out) >= limit:
+                break
+        return out
+
+    hot = pick(data.get("hot") or data.get("hot_goods") or data.get("走俏")
+                or data.get("涨价") or data.get("热门"), 3)
+    cold = pick(data.get("cold") or data.get("cold_goods") or data.get("滞销")
+                or data.get("跌价") or data.get("冷门"), 3)
+    caravan = pick(data.get("caravan_hint") or data.get("caravan") or data.get("求购")
+                   or data.get("商队"), 2)
+    news = _as_text(data.get("news") or data.get("headline") or data.get("消息")
+                    or data.get("行情"))[:120]
+    if not hot and not cold:
+        ihot, icold = _infer_from_news(news)
+        hot, cold = ihot, icold
+    cold = [g for g in cold if g not in hot]
+    if not hot and not cold and not caravan and not news:
+        return None
+    return MarketBrief(hot=hot, cold=cold, caravan_hint=caravan, news=news, source="llm")
 
 
 def coerce_action(data: Any) -> Tuple[str, List[Choice]]:

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple
 
-from ..models import Choice, EventCard, NPC, Quest
+from ..models import Choice, EventCard, MarketBrief, NPC, Quest
 from ..rng import RNG
 from ..state import BUILDING_DEFS, TownState
 
@@ -54,6 +54,24 @@ RELATION_KINDS = ["亲族", "师徒", "旧怨", "债务", "旧友", "暗恋", "�
 
 PLACES = ["井台", "石桥", "老磨坊", "祠堂前的空地", "南坡的篱笆", "码头",
           "旧兵营", "河湾的芦苇荡", "集市尽头", "学堂后院", "镇外的碑林"]
+
+MARKET_NEWS = [
+    "山口那边传来消息，{hot}的行情看涨。",
+    "有行商在酒馆里说，{hot}最近走得慢，{cold}倒是抢手。",
+    "昨夜的雨把官道泡软了，{hot}的货堆在了渡口。",
+    "邻镇的告示贴在集市门口：{hot}要价，{cold}照旧。",
+    "北岭的驮队换了货单，{hot}这阵子最被人念叨。",
+]
+
+HOT_WORDS = {
+    "food": "粮食", "wood": "木材", "stone": "石料", "ore": "矿石",
+    "tools": "工具", "books": "书籍", "liquor": "烈酒",
+}
+
+COLD_WORDS = {
+    "food": "粮食", "wood": "木材", "stone": "石料", "ore": "矿石",
+    "tools": "工具", "books": "书籍", "liquor": "烈酒",
+}
 
 
 class Narrator:
@@ -312,6 +330,37 @@ class Narrator:
         out = (text.replace("{ npc }", npc).replace("{npc}", npc)
                .replace("{place}", place).replace("{player}", "镇长"))
         return out
+
+    # ------------------------------------------------------------------
+    # 行情风向（离线兜底）
+    # ------------------------------------------------------------------
+    def market_brief(self, state: TownState) -> MarketBrief:
+        rng = self._next_rng(state, "market")
+        hot: List[str] = []
+        cold: List[str] = []
+        if state.season == "冬":
+            hot = ["food", "wood"]
+            cold = ["tools", "books"]
+        elif state.season == "秋":
+            hot = ["food"]
+            cold = ["ore", "tools"]
+        elif state.season == "夏":
+            hot = ["ore"]
+            cold = ["food"]
+        else:
+            hot = [rng.choice(["wood", "stone", "food"])]
+        if state.resource("food") < state.population * 2 and "food" not in hot:
+            hot.append("food")
+        if state.resource("ore") < 4 and "ore" not in hot:
+            hot.append("ore")
+        hot = hot[:3]
+        cold = [g for g in cold if g not in hot][:3]
+        caravan_hint = [rng.choice([g for g in ("food", "wood", "ore", "tools") if g not in cold] or ["ore"])]
+        news = rng.choice(MARKET_NEWS).format(
+            hot="、".join(HOT_WORDS.get(g, g) for g in hot) or "货",
+            cold="、".join(COLD_WORDS.get(g, g) for g in cold) or "别的货",
+        )
+        return MarketBrief(hot=hot, cold=cold, caravan_hint=caravan_hint[:2], news=news, source="template")
 
     # ------------------------------------------------------------------
     # DM 叙事

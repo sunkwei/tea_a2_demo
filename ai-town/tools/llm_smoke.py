@@ -41,6 +41,24 @@ def main():
         res = g.apply_choice(out.choices[0])
         print("  结算：", res.changes, "->", res.narrative[:120])
 
+    t2 = time.time()
+    brief, bsrc = g.agents.generate_market_brief(g.state)
+    print(f"\n行情风向用时 {time.time() - t2:.1f}s source={bsrc}")
+    print("  走俏：", brief.hot, "滞销：", brief.cold, "商队可能收：", brief.caravan_hint)
+    print("  新闻：", brief.news)
+    notes = g.state.apply_market_brief(brief)
+    print("  落地：", notes)
+    print("  价格偏置：", g.state.market.bias)
+
+    t3 = time.time()
+    report = g.advance_day()
+    print(f"\n推进一天用时 {time.time() - t3:.1f}s")
+    print("  行情：", report.get("market_notes"))
+    cb = report.get("callback")
+    if cb:
+        print("  翻旧账：", cb.get("title"), "->", str(cb.get("text", ""))[:80])
+    print("  今日事件：", [e.title for e in report.get("new_events") or []])
+
 
 if __name__ == "__main__":
     main()
