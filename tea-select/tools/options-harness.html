@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<!--
+  设置页的离线测试台（只在测试里用，不打进扩展包）：
+  用假的 browser API 加载 src/options.html 的表单，验证渲染与交互。
+  逻辑在 harness-stub.js（不放内联脚本，免得 web-ext lint 报警告）。
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>设置页测试台</title>
+  <link rel="stylesheet" href="../src/options.css" />
+</head>
+<body>
+  <div id="mount"></div>
+  <script src="harness-stub.js"></script>
+</body>
+</html>

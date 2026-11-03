@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tea_a2 划词助手 · 设置</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <img class="logo" src="../icons/icon.svg" alt="" width="36" height="36" />
+      <div>
+        <h1>tea_a2 划词助手</h1>
+        <p class="sub">划词 → 鼠标位置弹出横幅 → 翻译 / 搜索 / 总结，调用本机 tea_a2 的 <code>/api/llm/chat</code></p>
+      </div>
+      <span id="status" class="status">读取设置中…</span>
+    </header>
+
+    <section class="card">
+      <h2>接口与模型</h2>
+      <div class="row">
+        <label for="apiBase">接口地址</label>
+        <input id="apiBase" type="text" spellcheck="false" placeholder="http://localhost:8383" />
+        <button id="btnProviders" type="button">读取 tea_a2 的提供商</button>
+      </div>
+      <div class="row">
+        <label for="provider">默认提供商</label>
+        <input id="provider" list="providerList" type="text" spellcheck="false" placeholder="deepseek" />
+        <datalist id="providerList"></datalist>
+        <label for="model">默认模型</label>
+        <input id="model" list="modelList" type="text" spellcheck="false" placeholder="deepseek-flash" />
+        <datalist id="modelList"></datalist>
+        <button id="btnTest" type="button">测试连接</button>
+      </div>
+      <p class="hint" id="providerHint">点「读取 tea_a2 的提供商」可以从 <code>/api/providers</code> 拉取列表。</p>
+    </section>
+
+    <section class="card">
+      <h2>分任务模型（留空 = 用默认）</h2>
+      <div class="row">
+        <label for="translateProvider">翻译</label>
+        <input id="translateProvider" type="text" spellcheck="false" placeholder="提供商" />
+        <input id="translateModel" type="text" spellcheck="false" placeholder="模型" />
+        <label for="translateReasoning" class="inline">思考</label>
+        <select id="translateReasoning"></select>
+      </div>
+      <div class="row">
+        <label for="searchProvider">搜索</label>
+        <input id="searchProvider" type="text" spellcheck="false" placeholder="提供商" />
+        <input id="searchModel" type="text" spellcheck="false" placeholder="模型" />
+        <label for="searchReasoning" class="inline">思考</label>
+        <select id="searchReasoning"></select>
+      </div>
+      <div class="row">
+        <label for="summarizeProvider">总结</label>
+        <input id="summarizeProvider" type="text" spellcheck="false" placeholder="提供商" />
+        <input id="summarizeModel" type="text" spellcheck="false" placeholder="模型" />
+        <label for="summarizeReasoning" class="inline">思考</label>
+        <select id="summarizeReasoning"></select>
+      </div>
+      <p class="hint">
+        翻译固定「不思考」（系统提示词：<code>将下面内容翻译为英文/中文，不思考</code>）；总结默认「使用思考」。<br />
+        思考强度选 <code>auto</code> = <b>不发送</b>这个参数。像 MiniMax-M3.1-Flash 这种只支持自适应思考的模型，
+        收到 <code>none</code> 会直接报错，扩展会自动去掉该参数重试一次（并在结果里提示）。
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>搜索</h2>
+      <div class="row">
+        <label for="searchEngine">搜索引擎</label>
+        <select id="searchEngine"></select>
+        <label for="searchUrlTemplate" class="inline">模板</label>
+        <input id="searchUrlTemplate" type="text" spellcheck="false" placeholder="https://www.bing.com/search?q={q}" />
+      </div>
+      <div class="row">
+        <label for="searchMode">搜索方式</label>
+        <select id="searchMode">
+          <option value="auto">接口 + 扩展兜底（默认）</option>
+          <option value="api">只用接口联网（tea_a2 支持 search 之后用这个）</option>
+          <option value="extension">只用扩展抓到的搜索结果</option>
+        </select>
+      </div>
+      <div class="row">
+        <label class="check"><input id="searchAiSummary" type="checkbox" /> 抓到的搜索结果交给 tea_a2 归纳（关掉就只打开搜索页）</label>
+      </div>
+      <p class="hint">
+        <code>/api/llm/chat</code> 现在认 <code>search: true</code>（默认地址这台是 0.18.4）：请求会带上网搜索。
+        服务端搜索不稳时，可以把「搜索方式」切成 <code>extension</code>——由扩展自己抓搜索结果页再交给 tea_a2 归纳，
+        或者关掉「交给 tea_a2 归纳」，只打开搜索页。
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>交互</h2>
+      <div class="row">
+        <label for="minChars">最少划选字数</label>
+        <input id="minChars" type="number" min="1" max="200" step="1" />
+        <label for="maxTextChars" class="inline">送模型的最大字符</label>
+        <input id="maxTextChars" type="number" min="200" max="100000" step="100" />
+        <label class="check"><input id="showReasoning" type="checkbox" /> 结果里显示思考过程</label>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <button id="btnReset" type="button" class="ghost">恢复默认</button>
+      <span id="saveState" class="save">设置会自动保存</span>
+    </footer>
+  </main>
+  <script src="core.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
