@@ -195,3 +195,25 @@ npm run sticky:serve      # http://127.0.0.1:5177/（此模式才有真正的桌
 ```
 
 细节见 [`sticky-notes/README.md`](sticky-notes/README.md)。
+---
+
+## 🏘️ AI 小镇：无限人生（`ai-town/`）
+
+同一仓库里还有一款 **由 LLM 实时生成一切的文字模拟经营游戏**（Python + Tkinter）：你是新上任的镇长，居民、每日事件、主线剧情、危机全部由 LLM 现场生成，**没有两次相同的存档**。
+
+- 🧠 **LLM 只出素材，数值由状态机落地**：LLM 只能从固定词表里挑语义标签（`kind` / `costly` / `build:market` / `trust:n_3`），由确定性规则系统换算成金币、民心、信任 —— 有随机性，但数值不会崩
+- 🧑‍🤝‍🧑 **涌现式 NPC**：姓名、性格、背景、秘密、彼此的关系网（谁暗恋谁、谁欠谁的债）由模型现场编造，关系网由程序补全
+- 🕯️ **记忆驱动**：你做过的每件事都进记忆，模型之后会拿旧事来「翻旧账」
+- 🧠 **17 种结局**：按民心、信任、财富与行为倾向判定
+- 🔌 **在线 MiniMax（MiniMax-M3.1-Flash）/ 本地 Ollama / 任意 OpenAI 兼容端点 / 完全离线**（离线时由程序化叙述器接管，照样可玩）
+
+```bash
+cd ai-town
+python main.py                 # 启动图形界面
+python main.py --offline       # 不联网的离线版
+python main.py --sim --days 20 # 无头模拟，打印 20 天流水账
+python main.py --selftest      # 77 项单元测试
+python main.py --doctor        # 检查 LLM 连通性
+```
+
+细节见 [`ai-town/README.md`](ai-town/README.md)。

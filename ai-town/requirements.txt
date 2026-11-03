@@ -1,0 +1,4 @@
+# 运行时依赖：全部可选
+# - Tkinter 随 Python 自带（Windows/macOS 官方包已内置）
+# - Pillow 只用于 tools/shot.py 截图
+Pillow>=10.0

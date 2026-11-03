@@ -1,0 +1,12 @@
+{
+  "backend": "auto",
+  "minimax_url": "https://api.minimax.cn/v1",
+  "minimax_model": "MiniMax-M3.1-Flash",
+  "api_key": "",
+  "temperature": 0.9,
+  "max_tokens": 4000,
+  "timeout": 180,
+  "retries": 1,
+  "reasoning_effort": "low",
+  "reasoning_split": true
+}

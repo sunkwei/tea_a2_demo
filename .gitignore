@@ -18,3 +18,7 @@ sticky-notes/sticky-notes.html
 # Godot 导入缓存与运行截图
 GoDot/.godot/
 GoDot/shots/
+
+# AI 小镇：存档与 pycache
+ai-town/saves/
+ai-town/**/__pycache__/
