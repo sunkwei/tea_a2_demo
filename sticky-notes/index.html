@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>便笺 · Sticky Notes</title>
+    <meta name="description" content="本地文件即可运行的彩色便笺应用：高对比配色、自动归类、正则检索、定时提醒，可用本地 tea_a2 接口做 AI 增强。" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📌</text></svg>"
+    />
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">📌</span>
+        <h1>便笺</h1>
+        <span class="sub">Sticky Notes</span>
+      </div>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="top-actions">
+        <button class="btn ai-btn" id="btn-ai" title="AI 增强（问便笺 / 长文拆条 / 联网整理）">✨ AI</button>
+        <button class="btn primary" id="btn-new" title="新建便笺 (Ctrl+N)">＋ 新建</button>
+        <button class="btn" id="btn-settings" title="设置">⚙ 设置</button>
+        <button class="btn" id="btn-export" title="导出 JSON 备份">⬇ 导出</button>
+        <button class="btn" id="btn-import" title="导入 JSON 备份">⬆ 导入</button>
+        <input type="file" id="file-import" accept="application/json,.json" hidden />
+      </div>
+    </header>
+
+    <main>
+      <div class="banner" id="banner" hidden></div>
+
+      <section class="toolbar">
+        <div class="search-row">
+          <div class="search-wrap" id="search-wrap">
+            <span aria-hidden="true">🔍</span>
+            <input
+              id="search"
+              type="search"
+              autocomplete="off"
+              placeholder="搜索便笺…（点右侧 .* 切换正则，如 会议|需求）"
+              aria-label="搜索便笺"
+            />
+            <button id="btn-regex" title="正则模式：关（快捷键 R）">.*</button>
+          </div>
+          <span id="search-info">共 0 条便笺</span>
+        </div>
+
+        <div class="filter-row">
+          <select id="filter-cat" aria-label="按分类筛选">
+            <option value="all">全部分类</option>
+          </select>
+          <select id="filter-color" aria-label="按底色筛选">
+            <option value="all">全部底色</option>
+          </select>
+          <select id="filter-reminder" aria-label="按提醒状态筛选">
+            <option value="all">全部提醒状态</option>
+          </select>
+          <select id="filter-date" aria-label="按创建时间筛选">
+            <option value="all">全部时间</option>
+          </select>
+          <select id="sort" aria-label="排序方式">
+            <option value="created-desc">最近创建</option>
+          </select>
+          <label class="check"><input type="checkbox" id="filter-pinned" /> 仅置顶</label>
+          <button class="btn ghost" id="btn-reset">清除筛选</button>
+        </div>
+
+        <div class="chips" id="chips"></div>
+      </section>
+
+      <section class="stats" id="stats"></section>
+
+      <section class="grid" id="grid"></section>
+
+      <div class="empty" id="empty" hidden>
+        <div class="big">🗒️</div>
+        <p class="msg">还没有便笺，点右上角「＋ 新建」写第一条。</p>
+        <p class="hint">
+          快捷键：<code>Ctrl+N</code> 新建 · <code>/</code> 搜索 · <code>R</code> 正则开关 · <code>Esc</code> 关闭弹窗
+        </p>
+      </div>
+    </main>
+
+    <button class="fab" id="fab" title="新建便笺 (Ctrl+N)">＋</button>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <!-- ============================ 便笺编辑 ============================ -->
+    <div class="modal" id="note-modal" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="nm-title">
+        <header class="modal-head">
+          <h2 id="nm-title">新建便笺</h2>
+          <button class="icon-btn" data-close title="关闭">✕</button>
+        </header>
+
+        <div class="modal-body">
+          <label class="field">
+            <span class="label">内容</span>
+            <textarea id="nm-text" rows="5" placeholder="写点什么… 支持多行"></textarea>
+          </label>
+
+          <div class="row">
+            <div class="field grow">
+              <span class="label">便笺底色</span>
+              <div class="swatches" id="nm-swatches"></div>
+              <label class="inline">
+                <input type="color" id="nm-bg" /> <span>自定义底色</span>
+              </label>
+            </div>
+            <div class="field">
+              <span class="label">文字颜色（自动保证高对比）</span>
+              <label class="inline">
+                <input type="checkbox" id="nm-fg-auto" checked /> <span>自动挑选最高对比文字色</span>
+              </label>
+              <label class="inline">
+                <input type="color" id="nm-fg" /> <span>手动指定</span>
+              </label>
+              <div class="contrast" id="nm-contrast"></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field grow">
+              <span class="label">分类</span>
+              <div class="row ai-row">
+                <select id="nm-cat"></select>
+                <button class="btn" id="nm-ai-cat" title="让本地模型根据内容猜一个分类">✨ AI 归类</button>
+              </div>
+              <input type="text" id="nm-cat-new" placeholder="或输入一个新分类名…" />
+              <div class="hint" id="nm-cat-hint"></div>
+            </div>
+
+            <div class="field grow">
+              <span class="label">提醒</span>
+              <label class="inline">
+                <input type="checkbox" id="nm-remind" />
+                <span>开启提醒（在指定时间前 <b id="nm-lead">5</b> 分钟发出，需浏览器通知权限）</span>
+              </label>
+              <input type="datetime-local" id="nm-remind-at" />
+              <div class="quick">
+                <button data-quick="10">+10 分钟</button>
+                <button data-quick="60">+1 小时</button>
+                <button data-quick="tomorrow9">明天 9:00</button>
+                <button data-quick="tomorrow8">明早 8:00</button>
+              </div>
+              <button class="btn" id="nm-ai-time" title="让本地模型从便笺里抽出时间">⏰ AI 建议提醒时间</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="label">效果预览</span>
+            <div class="preview" id="nm-preview"></div>
+          </div>
+        </div>
+
+        <footer class="modal-foot">
+          <button class="btn danger" id="nm-delete" hidden>删除</button>
+          <span class="spacer"></span>
+          <button class="btn" data-close>取消</button>
+          <button class="btn primary" id="nm-save">保存</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============================ AI 面板 ============================ -->
+    <div class="modal" id="ai-modal" hidden>
+      <div class="modal-card">
+        <header class="modal-head">
+          <h2>✨ AI 助手</h2>
+          <span class="hint" id="ai-status">未连接</span>
+          <button class="icon-btn" data-close title="关闭">✕</button>
+        </header>
+
+        <div class="modal-body">
+          <div class="tabs">
+            <button class="tab on" data-tab="ask">💬 问便笺</button>
+            <button class="tab" data-tab="summarize">📝 长文拆条</button>
+            <button class="tab" data-tab="search">🌐 联网整理</button>
+          </div>
+
+          <div class="tab-panel" data-panel="ask">
+            <label class="field">
+              <span class="label">你的问题</span>
+              <textarea id="ai-ask-q" rows="2" placeholder="例如：我这周有哪些会议要参加？"></textarea>
+            </label>
+            <div class="row">
+              <button class="btn primary" id="ai-ask-run">提问</button>
+              <span class="hint">只依据本机便笺作答，答案里用 [编号] 引用来源</span>
+            </div>
+            <div class="ai-out" id="ai-ask-out"></div>
+          </div>
+
+          <div class="tab-panel" data-panel="summarize" hidden>
+            <label class="field">
+              <span class="label">粘贴一段材料（会议记录 / 聊天记录 / 网页剪藏）</span>
+              <textarea id="ai-sum-text" rows="6" placeholder="把长文本贴进来，AI 会拆成若干条便笺"></textarea>
+            </label>
+            <div class="row">
+              <button class="btn primary" id="ai-sum-run">拆成便笺</button>
+              <span class="hint">材料里出现的时间会一并变成提醒</span>
+            </div>
+            <div class="ai-out" id="ai-sum-out"></div>
+          </div>
+
+          <div class="tab-panel" data-panel="search" hidden>
+            <label class="field">
+              <span class="label">想查什么</span>
+              <input type="text" id="ai-search-q" placeholder="例如：本地大模型部署的几种方案" />
+            </label>
+            <div class="row">
+              <button class="btn primary" id="ai-search-run">联网搜索并整理</button>
+              <span class="hint">走 tea_a2 的联网搜索（web_tools），会联网</span>
+            </div>
+            <div class="ai-out" id="ai-search-out"></div>
+          </div>
+        </div>
+
+        <footer class="modal-foot">
+          <span class="hint" id="ai-privacy"></span>
+          <span class="spacer"></span>
+          <button class="btn" data-close>关闭</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============================ 设置面板 ============================ -->
+    <div class="modal" id="settings-modal" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="st-title">
+        <header class="modal-head">
+          <h2 id="st-title">设置</h2>
+          <button class="icon-btn" data-close title="关闭">✕</button>
+        </header>
+
+        <div class="modal-body">
+          <div class="section">
+            <h3>AI 增强（本地 tea_a2）</h3>
+            <label class="inline"><input type="checkbox" id="set-ai" /> 启用 AI 增强</label>
+            <div class="row">
+              <label class="inline grow">
+                API 地址
+                <input type="text" id="set-ai-base" style="flex: 1; min-width: 220px" />
+              </label>
+              <label class="inline">
+                模型
+                <select id="set-ai-model" style="min-width: 180px">
+                  <option value="">（用服务端默认）</option>
+                </select>
+              </label>
+              <label class="inline">
+                思考强度
+                <select id="set-ai-thinking" style="min-width: 150px">
+                  <option value="auto">自动（推荐）</option>
+                  <option value="none">不思考</option>
+                  <option value="full">允许思考</option>
+                </select>
+              </label>
+              <label class="inline">
+                超时
+                <input type="number" id="set-ai-timeout" min="5" max="600" step="5" style="width: 84px" /> 秒
+              </label>
+            </div>
+            <div class="row">
+              <button class="btn" id="btn-ai-test">测试连接</button>
+              <span class="hint" id="ai-conn"></span>
+            </div>
+            <p class="hint">
+              启用后，便笺内容会发送给你配置的模型 provider（默认本机
+              <code>http://localhost:8383</code> 的 deepseek-flash）——内容会离开这台机器进入云端模型。
+              关闭开关即可完全离线使用。
+            </p>
+          </div>
+
+          <div class="section">
+            <h3>提醒</h3>
+            <div class="row">
+              <label class="inline">
+                提前量
+                <input type="number" id="set-lead" min="0" max="120" step="1" style="width: 84px" /> 分钟
+              </label>
+              <label class="inline"><input type="checkbox" id="set-sound" /> 提醒时播放提示音</label>
+            </div>
+            <div id="notify-state" class="hint"></div>
+            <div class="row">
+              <button class="btn" id="btn-ask-notify">申请浏览器通知权限</button>
+              <button class="btn" id="btn-test-notify">发送测试通知</button>
+            </div>
+            <p class="hint">
+              提示：以 <code>file://</code> 打开时浏览器通常会拒绝通知权限，此时提醒自动降级为「应用内横幅 + 提示音 + 标题闪烁」；
+              用 <code>npm run sticky:serve</code> 以 http:// 打开同一份文件即可获得真正的桌面通知。
+            </p>
+          </div>
+
+          <div class="section">
+            <h3>自动分类规则（按命中数与优先级判定）</h3>
+            <div class="rule-row" style="font-size: 12px; color: var(--muted)">
+              <span>分类名</span><span>正则表达式</span><span>优先级</span><span>颜色</span><span></span>
+            </div>
+            <div id="rules"></div>
+            <div class="row">
+              <button class="btn" id="btn-add-rule">＋ 新增规则</button>
+              <button class="btn primary" id="btn-save-rules">保存规则并重新归类</button>
+            </div>
+            <p class="hint">
+              规则按「命中关键词数量」多者胜、数量相同再比「优先级」；「私密」类规则一旦命中直接锁定分类。被手动指定过分类的便笺不会被自动改写。
+            </p>
+          </div>
+
+          <div class="section">
+            <h3>数据</h3>
+            <div class="row">
+              <button class="btn" id="btn-export2">⬇ 导出 JSON</button>
+              <button class="btn" id="btn-import2">⬆ 导入 JSON</button>
+              <button class="btn danger" id="btn-clear">清空全部便笺</button>
+            </div>
+            <div class="kv">
+              <span class="k">存储位置</span><span>本机浏览器 localStorage（键名 <code>sticky-notes/v1</code>）</span>
+              <span class="k">运行方式</span><span id="about-protocol">—</span>
+              <span class="k">隐私</span><span>纯本地运行，不联网、不上传任何内容（启用 AI 后仅向所配置的模型发送）</span>
+            </div>
+          </div>
+        </div>
+
+        <footer class="modal-foot">
+          <span class="spacer"></span>
+          <button class="btn" data-close>关闭</button>
+        </footer>
+      </div>
+    </div>
+
+    <script src="src/core.js"></script>
+    <script src="src/ai.js"></script>
+    <script src="src/ai-ui.js"></script>
+    <script src="src/app.js"></script>
+  </body>
+</html>

@@ -172,3 +172,26 @@ node iptv-player/tools/shot.mjs                # 无头浏览器跑完整流程 
 ```
 
 细节见 [`iptv-player/README.md`](iptv-player/README.md)。
+
+---
+
+## 📌 附：便笺（Sticky Notes）
+
+同一仓库里还有一个**纯前端、纯本地**的便笺应用 —— 双击 `sticky-notes/index.html` 就能用，不联网、不上传、数据存在本机 localStorage；可选接上本机 tea_a2（`http://localhost:8383`）做 AI 增强。
+
+![便笺应用](sticky-notes/docs/preview.png)
+
+- 🎨 **彩色便笺 + 高对比度**：12 种底色，文字色自动按 WCAG 对比度挑选（全部 ≥ 4.5:1，编辑器实时显示对比度与 AAA/AA 徽章）
+- ⏰ **自动记时 + 提前 5 分钟提醒**：新建即记录创建时间；勾选提醒后按「指定时间 − 5 分钟」触发，同时申请浏览器通知权限；file:// 下浏览器拒绝通知时自动降级为应用内横幅 + 提示音 + 标题闪烁
+- 🗂️ **自动归类 + 正则查询**：10 条可编辑的正则分类规则（命中数优先、优先级兜底、私密类 sticky 锁定）；搜索框一键切正则，命中处高亮，非法正则只报错不崩溃
+- ✨ **AI 增强**（默认关闭）：接本机 tea_a2 的 `/api/llm/chat` —— AI 归类、AI 从便笺里抽时间并设成提醒、基于本机便笺的问答、长文拆条、联网整理（`web_tools`）；内置 `reasoning_effort` 阶梯降级（none → minimal → low → 不传），避免模型把预算全花在思考上导致正文为空
+
+```bash
+npm run test:sticky       # 81 项离线断言（Node 直跑）
+npm run sticky:verify     # 无头 Edge 端到端验证 44 项 + 截图（file:// 真实场景，含 AI）
+npm run sticky:ai         # AI 接口联调 17 项（打真实 tea_a2）
+npm run sticky:build      # 打包单文件版 sticky-notes/sticky-notes.html
+npm run sticky:serve      # http://127.0.0.1:5177/（此模式才有真正的桌面通知）
+```
+
+细节见 [`sticky-notes/README.md`](sticky-notes/README.md)。

@@ -20,7 +20,12 @@
     "iptv:shot": "node iptv-player/tools/shot.mjs",
     "iptv:serve": "node iptv-player/tools/serve.mjs",
     "iptv:verify": "node iptv-player/tools/shot.mjs",
-    "iptv:single": "vite build --config vite.iptv-single.config.js && node iptv-player/tools/check-single.mjs"
+    "iptv:single": "vite build --config vite.iptv-single.config.js && node iptv-player/tools/check-single.mjs",
+    "test:sticky": "node sticky-notes/tools/selftest.mjs",
+    "sticky:verify": "node sticky-notes/tools/verify.mjs",
+    "sticky:build": "node sticky-notes/tools/build-single.mjs",
+    "sticky:serve": "node sticky-notes/tools/serve.mjs",
+    "sticky:ai": "node sticky-notes/tools/ai-check.mjs"
   },
   "keywords": [
     "three.js",
@@ -29,7 +34,10 @@
     "canvas",
     "animation",
     "iptv",
-    "hls"
+    "hls",
+    "sticky-notes",
+    "localstorage",
+    "offline"
   ],
   "license": "MIT",
   "dependencies": {
