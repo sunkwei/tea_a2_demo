@@ -77,7 +77,7 @@ class TownApp(tk.Tk):
         m_view.add_command(label="结束这一天", command=self._on_next_day)
         m_view.add_command(label="刷新界面", command=self._refresh_all)
         m_help = tk.Menu(menubar, bg=T.BG_PANEL, fg=T.FG, tearoff=0)
-        m_help.add_command(label="玩法说明", command=self._show_help)
+        m_help.add_command(label="操作指南", command=self._show_help)
         m_help.add_command(label="结局列表", command=self._show_endings)
         menubar.add_cascade(label="游戏", menu=m_game)
         menubar.add_cascade(label="操作", menu=m_view)
@@ -166,10 +166,14 @@ class TownApp(tk.Tk):
         self.people_list.bind("<<ListboxSelect>>", self._on_people_select)
         self.nb.add(self.people_list, text="人物")
 
-        self.people_detail = tk.Text(self.nb, bg=T.BG_CARD, fg=T.FG, font=T.FONT,
+        self.detail_frame = tk.Frame(self.nb, bg=T.BG_CARD)
+        self.nb.add(self.detail_frame, text="档案")
+        self.people_detail = tk.Text(self.detail_frame, bg=T.BG_CARD, fg=T.FG, font=T.FONT,
                                       relief="flat", bd=0, padx=10, pady=8,
                                       wrap="word", height=12, state="disabled")
-        self.nb.add(self.people_detail, text="档案")
+        self.people_detail.pack(fill="both", expand=True, padx=6, pady=6)
+        self.hire_frame = tk.Frame(self.detail_frame, bg=T.BG_CARD)
+        self.hire_frame.pack(fill="x", padx=8, pady=(0, 8))
 
         self.events_list = tk.Listbox(self.nb, bg=T.BG_CARD, fg=T.FG, font=T.FONT,
                                       relief="flat", bd=0, highlightthickness=0,
@@ -341,6 +345,12 @@ class TownApp(tk.Tk):
             self._append("结算：" + "；".join(notes), "system")
         for e in report.get("events") or []:
             self._append("· " + e, "system")
+        for note in report.get("market_notes") or []:
+            self._append("行情：" + note, "system")
+        cb = report.get("callback") or {}
+        if cb.get("title"):
+            self._append(f"【旧事重现】{cb.get('title', '')}", "day")
+            self._append(cb.get("text", ""), "story")
         self._append(f"今天有 {len(st.events)} 件事等你拿主意。", "system")
         self._refresh_all()
 
@@ -506,6 +516,36 @@ class TownApp(tk.Tk):
             lines.append(f"工作：{job.name}")
         self.people_detail.insert("end", "\n".join(lines))
         self.people_detail.configure(state="disabled")
+        self._refresh_hire(npc)
+
+    def _refresh_hire(self, npc: NPC) -> None:
+        """档案页底部的雇工入口。"""
+        for w in self.hire_frame.winfo_children():
+            w.destroy()
+        st = self.game.state
+        tk.Label(self.hire_frame, text="雇他去干活", bg=T.BG_CARD, fg=T.FG_DIM,
+                 font=T.FONT_SMALL).pack(anchor="w", pady=(2, 2))
+        if not st.buildings:
+            tk.Label(self.hire_frame, text="镇上还没有建筑，先建一座。", bg=T.BG_CARD,
+                     fg=T.FG_DIM, font=T.FONT_SMALL).pack(anchor="w")
+            return
+        for b in st.buildings:
+            cap = int(BUILDING_DEFS.get(b.kind, {}).get("cap", 3))
+            full = len(b.staff) >= cap
+            btn = tk.Button(self.hire_frame, text=f"{b.name}（{len(b.staff)}/{cap}）",
+                            command=lambda bid=b.id, nid=npc.id: self._do_hire(nid, bid),
+                            bg=T.BG_PANEL, fg=T.FG_DIM if full else T.FG, relief="flat", bd=0,
+                            padx=6, pady=2, font=T.FONT_SMALL, anchor="w",
+                            activebackground=T.ACCENT_SOFT)
+            btn.pack(fill="x", pady=1)
+
+    def _do_hire(self, npc_id: str, building_id: str) -> None:
+        ok, msg = self.game.hire(npc_id, building_id)
+        self._append(msg if ok else f"（{msg}）", "change" if ok else "error")
+        npc = self.game.state.find_npc(npc_id)
+        if npc is not None:
+            self._show_npc_detail(npc)
+        self._refresh_all()
 
     def _on_people_select(self, _evt: Any) -> None:
         sel = self.people_list.curselection()
@@ -525,15 +565,27 @@ class TownApp(tk.Tk):
         for w in self.market_frame.winfo_children():
             w.destroy()
         st = self.game.state
+        brief = st.market_brief
+        if brief:
+            head = "今日行情：" + (brief.news or "风平浪静")
+            tk.Label(self.market_frame, text=head, bg=T.BG_CARD, fg=T.INFO,
+                     font=T.FONT_SMALL, wraplength=300, justify="left").pack(anchor="w", padx=8, pady=(8, 2))
+            if brief.hot:
+                tk.Label(self.market_frame, text="走俏：" + "、".join(GOODS_LABELS.get(g, g) for g in brief.hot),
+                         bg=T.BG_CARD, fg=T.GOOD, font=T.FONT_SMALL).pack(anchor="w", padx=8)
+            if brief.cold:
+                tk.Label(self.market_frame, text="滞销：" + "、".join(GOODS_LABELS.get(g, g) for g in brief.cold),
+                         bg=T.BG_CARD, fg=T.BAD, font=T.FONT_SMALL).pack(anchor="w", padx=8)
         tk.Label(self.market_frame, text="价格随供需浮动", bg=T.BG_CARD, fg=T.FG_DIM,
                  font=T.FONT_SMALL).pack(anchor="w", padx=8, pady=(8, 4))
         for good in ("food", "wood", "stone", "ore", "tools", "books"):
             row = tk.Frame(self.market_frame, bg=T.BG_CARD)
             row.pack(fill="x", padx=8, pady=2)
             own = st.resource(good) if good in st.resources else st.stock_of(good)
+            arrow = {1: "↑", -1: "↓"}.get(st.market.trend(good), "→")
             tk.Label(row, text=f"{GOODS_LABELS.get(good, good)}", bg=T.BG_CARD, fg=T.FG,
                      font=T.FONT, width=6, anchor="w").pack(side="left")
-            tk.Label(row, text=f"市价{st.market.price_of(good):.1f}　存{own}",
+            tk.Label(row, text=f"市价{st.market.price_of(good):.1f} {arrow}　存{own}",
                      bg=T.BG_CARD, fg=T.FG_DIM, font=T.FONT_SMALL).pack(side="left", padx=4)
             tk.Button(row, text="卖5", command=lambda g=good: self._do_trade("sell", g),
                       bg=T.BG_PANEL, fg=T.FG, relief="flat", bd=0, padx=6,
@@ -694,16 +746,23 @@ class TownApp(tk.Tk):
         messagebox.showinfo("结局", f"{ending.title}\n\n{ending.text}")
 
     def _show_help(self) -> None:
-        messagebox.showinfo(
-            "玩法说明",
-            "《AI 小镇：无限人生》\n\n"
-            "· 你是新上任的镇长，NPC、事件、剧情全部由 LLM 现场生成。\n"
-            "· 在中间输入「我想去井台看看」这类自由描述 → LLM 叙述结果并给 3 个分支。\n"
-            "· 点分支或事件页签里的事件 → 确定性状态机结算资源 / 民心 / 信任。\n"
-            "· 「结束这一天」推进一天：产出、口粮、税收、行情、商队都会结算。\n"
-            "· 你的每个选择都会被记住，LLM 之后会拿旧事来翻旧账。\n"
-            "· 民心、信任、财富与行为倾向共同决定 17 种结局之一。",
-        )
+        """打开操作指南（读 ai_town/GUIDE.md，与仓库里的手册同一份）。"""
+        try:
+            from .guide import show_guide
+
+            show_guide(self)
+        except Exception as e:  # noqa: BLE001
+            messagebox.showinfo(
+                "操作指南",
+                "《AI 小镇：无限人生》\n\n"
+                "· 你是新上任的镇长，NPC、事件、剧情全部由 LLM 现场生成。\n"
+                "· 在中间输入「我想去井台看看」这类自由描述 → LLM 叙述结果并给 3 个分支。\n"
+                "· 点分支或事件页签里的事件 → 确定性状态机结算资源 / 民心 / 信任。\n"
+                "· 「结束这一天」推进一天：产出、口粮、税收、行情、商队都会结算。\n"
+                "· 你的每个选择都会被记住，之后会拿旧事来翻旧账。\n"
+                "· 民心、信任、财富与行为倾向共同决定结局。\n\n"
+                f"（完整手册打开失败：{e}）",
+            )
 
     def _show_endings(self) -> None:
         text = "\n".join(f"· {e['title']}" for e in ENDINGS)

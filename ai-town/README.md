@@ -33,6 +33,14 @@ python main.py --doctor        # 检查 LLM 连通性
 
 > 需要 Python 3.10+（本机实测 3.14.10），Tkinter 随 Python 自带，无需 pip 安装。
 
+### 操作指南（玩家手册）
+
+- 手册文件：**[`ai_town/GUIDE.md`](ai_town/GUIDE.md)** —— 10 页：开始之前 / 一分钟上手 / 界面导览 /
+  核心操作 / 数值系统 / 建筑与人手 / 记忆与「翻旧账」/ 结局 / LLM 与离线模式 / 常见问题。
+- 游戏内：菜单「**帮助 → 操作指南**」会**直接读取上面这个文件**渲染成多页手册
+  （实现见 `ai_town/ui/guide.py`），所以改文件就等于改游戏里的手册，不会出现两份文档各说各话。
+- 界面截图：[`docs/guide.png`](docs/guide.png)
+
 ## 二、LLM 配置（MiniMax 在线）
 
 本机走 **MiniMax**（OpenAI 兼容端点），配置在 `config.json`：
