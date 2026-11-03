@@ -92,10 +92,12 @@ def run(
         _out(f"结局：{ending.title}")
         _out(ending.text)
         _out("=" * 56)
-        _out(f"第{state.day}天 {state.season}季｜人口 {state.population}｜民心 {state.morale}"
-             f"｜金 {state.resource('coin')}｜粮 {state.resource('food')}"
-             f"｜建筑 {len(state.buildings)}｜记忆 {len(state.memory)} 条")
-        _out(f"行为倾向：{state.behavior}")
+    # 汇总始终打印（--quiet 只是不刷流水账）
+    _out(f"第{state.day}天 {state.season}季｜人口 {state.population}｜民心 {state.morale}"
+         f"｜金 {state.resource('coin')}｜粮 {state.resource('food')}"
+         f"｜建筑 {len(state.buildings)}｜记忆 {len(state.memory)} 条")
+    _out(f"行为倾向：{state.behavior}")
+    _out(f"结局：{ending.title} —— {ending.text[:60]}")
     return game
 
 
