@@ -24,13 +24,14 @@ from ..models import Choice, EventCard, NPC
 from ..save import DEFAULT_SAVE_DIR, list_saves
 from ..state import BUILDING_DEFS
 from ..models import GOODS_LABELS
+from .auto_host import AutoHostMixin
 from . import theme as T
 
 TILE = 54
 MAP_PAD = 8
 
 
-class TownApp(tk.Tk):
+class TownApp(AutoHostMixin, tk.Tk):
     def __init__(
         self,
         seed: Optional[int] = None,
@@ -51,6 +52,7 @@ class TownApp(tk.Tk):
         self.current_event: Optional[EventCard] = None
         self.current_choices: List[Choice] = []
         self._map_items: Dict[str, str] = {}
+        self._init_autopilot()
 
         self._build_menu()
         self._build_layout()
@@ -75,6 +77,11 @@ class TownApp(tk.Tk):
         m_game.add_command(label="退出", command=self.destroy)
         m_view = tk.Menu(menubar, bg=T.BG_PANEL, fg=T.FG, tearoff=0)
         m_view.add_command(label="结束这一天", command=self._on_next_day)
+        m_view.add_separator()
+        m_view.add_command(label="AI 托管 / 玩家接管", command=self._toggle_autopilot)
+        m_view.add_command(label="托管策略：LLM 决策", command=lambda: self._set_autopilot_policy("auto"))
+        m_view.add_command(label="托管策略：纯规则", command=lambda: self._set_autopilot_policy("rule"))
+        m_view.add_separator()
         m_view.add_command(label="刷新界面", command=self._refresh_all)
         m_help = tk.Menu(menubar, bg=T.BG_PANEL, fg=T.FG, tearoff=0)
         m_help.add_command(label="操作指南", command=self._show_help)
@@ -151,6 +158,11 @@ class TownApp(tk.Tk):
                                   relief="flat", bd=0, padx=12, pady=6,
                                   activebackground=T.ACCENT_SOFT)
         self.btn_next.grid(row=0, column=2, padx=(8, 0))
+        self.btn_auto = tk.Button(input_row, text="AI 托管", command=self._toggle_autopilot,
+                                  bg=T.BG_CARD, fg=T.FG, font=T.FONT,
+                                  relief="flat", bd=0, padx=12, pady=6,
+                                  activebackground=T.ACCENT_SOFT)
+        self.btn_auto.grid(row=0, column=3, padx=(8, 0))
 
         # ---- 右栏 ----
         right = tk.Frame(self, bg=T.BG, width=330)
@@ -310,6 +322,10 @@ class TownApp(tk.Tk):
         text = self.entry.get().strip()
         if not text:
             return
+        if self.autopilot_mode:
+            # 托管中玩家输入行动 = 立即接管
+            self._takeover(text)
+            return
         self.entry.delete(0, "end")
         self._append(f"▸ 你决定：{text}", "speaker")
         self._set_choices([])
@@ -334,6 +350,9 @@ class TownApp(tk.Tk):
         self._refresh_all()
 
     def _on_next_day(self) -> None:
+        if self.autopilot_mode:
+            self._append("（AI 托管中，日子由 AI 推进；你要插手就先接管。）", "system")
+            return
         self._set_choices([])
         self._run_bg(self.game.advance_day, self._on_next_day_done, "新的一天…")
 
@@ -457,7 +476,9 @@ class TownApp(tk.Tk):
         self._refresh_buildings()
         self._refresh_quest()
         self._refresh_log()
-        self.lbl_status.configure(text=self.game.status_line() + "   |   " + self.game.llm_label())
+        mode = "AI 托管中" if self.autopilot_mode else "玩家操作"
+        self.lbl_status.configure(
+            text=self.game.status_line() + f"   |   {mode}   |   " + self.game.llm_label())
 
     def _refresh_resources(self) -> None:
         for w in self.res_frame.winfo_children():

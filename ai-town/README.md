@@ -138,6 +138,10 @@ python main.py --autoplay --days 30 --policy rule  # 纯规则镇长（离线、
 实现：`ai_town/npc_life.py`（NPC 自主行为）+ `ai_town/agents/autopilot.py`（AI 镇长）+ `ai_town/autoplay.py`（主循环）。
 自动玩与真人玩走同一条代码路径，出来的结局也是合法结局。
 
+**图形界面里也能托管**：输入行右侧有「AI 托管」按钮，点一下镇长就交给 AI（叙事面板会实时打出 AI 每一步做了什么、为什么）；
+想收回指挥权，直接在输入框写一句行动并回车即可**立即接管**，或点变成「■ 接管」的按钮。
+托管策略可在菜单「操作 → 托管策略」里切 LLM / 纯规则。截图见 [`docs/autopilot.png`](docs/autopilot.png)。
+
 ---
 
 ## 五、目录结构

@@ -62,12 +62,17 @@ class RulePolicy:
             want = list(st.caravan.demands.keys())
             if want:
                 return f"把{stock_label(want[0])}卖给{st.caravan.name}"
-        # 缺什么建什么
+        # 缺什么建什么（钱和料都要够，否则先去补料）
         need = _needed_building(st)
         if need:
             d = BUILDING_DEFS[need]
-            if st.resource("coin") >= d["cost"]["coin"]:
+            cost = d.get("cost", {})
+            if all(st.resource(k) >= v for k, v in cost.items()):
                 return f"在镇外空地上开建一座{d['name']}"
+            missing = [k for k, v in cost.items() if st.resource(k) < v]
+            if missing and st.resource("coin") > 40:
+                what = "、".join(missing)
+                return f"去集市买一批{what}，先把材料凑齐"
         # 还没打过招呼的人
         strangers = [n for n in st.npcs if n.alive and not n.met]
         if strangers:
