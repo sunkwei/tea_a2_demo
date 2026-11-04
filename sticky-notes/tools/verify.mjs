@@ -365,6 +365,94 @@ async function main() {
       return true;
     `);
 
+    /* ---------------- 6.5 回收站 ---------------- */
+    console.log('\n回收站');
+    const trash1 = await cdp.eval(`
+      window.confirm = () => true;   // 无头环境里 confirm 默认返回 false
+      const before = window.__sticky.state.notes.length;
+      const card = document.querySelector('.note');
+      const id = card.dataset.id;
+      const btn = [...card.querySelectorAll('button[data-act]')].find(b => b.dataset.act === 'del');
+      btn.click();
+      await new Promise(r => setTimeout(r, 400));
+      const n = window.__sticky.state.notes.find(x => x.id === id);
+      return {
+        id,
+        before,
+        after: window.__sticky.state.notes.length,
+        deletedAt: n ? n.deletedAt : null,
+        reminder: n ? n.reminder : 'x',
+        trashedReminder: n && n.trashedReminder ? n.trashedReminder.at : null,
+        activeCards: document.querySelectorAll('.note').length,
+        trashBtn: document.querySelector('#btn-trash').textContent.replace(/\\s+/g, ' ').trim(),
+      };
+    `);
+    check('删除是软删除：数据里还留着', trash1.after === trash1.before, trash1.before + ' → ' + trash1.after);
+    check('被删便笺记下了删除时间', trash1.deletedAt > 0, String(trash1.deletedAt));
+    check('回收站里的便笺不再带提醒', trash1.reminder === null);
+    check('原提醒被收进 trashedReminder（还原时恢复）', trash1.trashedReminder > 0, String(trash1.trashedReminder));
+
+    const trash2 = await cdp.eval(`
+      document.querySelector('#btn-trash').click();
+      await new Promise(r => setTimeout(r, 400));
+      return {
+        trashedCards: document.querySelectorAll('.note.trashed').length,
+        cards: document.querySelectorAll('.note').length,
+        trashBtn: document.querySelector('#btn-trash').textContent.replace(/\\s+/g, ' ').trim(),
+        newHidden: document.querySelector('#btn-new').hidden,
+        emptyTrashVisible: !document.querySelector('#btn-empty-trash').hidden,
+      };
+    `);
+    check('切到回收站能看到已删除的便笺', trash2.trashedCards === 1, trash2.trashedCards + ' 张');
+    check('回收站按钮显示条数', /1/.test(trash2.trashBtn), trash2.trashBtn);
+    check('回收站视图里隐藏「新建」', trash2.newHidden === true);
+    check('回收站视图里出现「清空回收站」', trash2.emptyTrashVisible === true);
+    await cdp.shot(path.join(OUT, '06-trash.png'));
+
+    const trash3 = await cdp.eval(`
+      document.querySelector('.note.trashed [data-act="restore"]').click();
+      await new Promise(r => setTimeout(r, 400));
+      const n = window.__sticky.state.notes.find(x => x.id === '${trash1.id}');
+      return {
+        deletedAt: n ? n.deletedAt : 'gone',
+        trashedCards: document.querySelectorAll('.note.trashed').length,
+        reminder: n && n.reminder ? n.reminder.at : null,
+      };
+    `);
+    check('还原后删除时间被清空', trash3.deletedAt === null, String(trash3.deletedAt));
+    check('还原后回收站里少了一条', trash3.trashedCards === 0, String(trash3.trashedCards));
+    check('还原后提醒恢复', trash3.reminder > 0, String(trash3.reminder));
+
+    const trash4 = await cdp.eval(`
+      // 再删一次，然后彻底删除
+      document.querySelector('#btn-trash').click();
+      await new Promise(r => setTimeout(r, 200));
+      window.confirm = () => true;
+      const card = [...document.querySelectorAll('.note')].find(c => c.dataset.id === '${trash1.id}');
+      [...card.querySelectorAll('button[data-act]')].find(b => b.dataset.act === 'del').click();
+      await new Promise(r => setTimeout(r, 300));
+      document.querySelector('#btn-trash').click();
+      await new Promise(r => setTimeout(r, 300));
+      const before = window.__sticky.state.notes.length;
+      const purge = document.querySelector('.note.trashed [data-act="purge"]');
+      if (purge) purge.click();
+      await new Promise(r => setTimeout(r, 400));
+      return {
+        before,
+        after: window.__sticky.state.notes.length,
+        stillThere: !!window.__sticky.state.notes.find(x => x.id === '${trash1.id}'),
+      };
+    `);
+    check('彻底删除后数据里真的没有了', trash4.after === trash4.before - 1, trash4.before + ' → ' + trash4.after);
+    check('彻底删除的便笺不再存在', trash4.stillThere === false);
+
+    // 回到正常视图
+    await cdp.eval(`
+      if (window.__sticky.ui.scope === 'trash') document.querySelector('#btn-trash').click();
+      await new Promise(r => setTimeout(r, 300));
+      return true;
+    `);
+
     /* ---------------- 7. 刷新后仍存在（localStorage 持久化） ---------------- */
     console.log('\n持久化');
     const beforeReload = await cdp.eval(`return window.__sticky.state.notes.length;`);

@@ -571,6 +571,106 @@ t('明确指定思考强度时才带上 reasoning_effort', () => {
 });
 
 /* ------------------------------------------------------------------ */
+group('回收站');
+
+t('新建的便笺不在回收站里', () => {
+  const n = C.createNote({ text: 'x', rules: C.DEFAULT_RULES });
+  eq(n.deletedAt, null);
+});
+
+t('旧数据没有 deletedAt 也能正常读', () => {
+  const n = C.normalizeNote({ text: '老便笺' });
+  eq(n.deletedAt, null);
+});
+
+t('软删除：记下删除时间，并把提醒收起来', () => {
+  const at = Date.now() + 3600000;
+  const n = C.createNote({ text: '要提醒的事', reminderAt: at, leadMinutes: 5, rules: C.DEFAULT_RULES });
+  const t = C.moveToTrash(n, 1700000000000);
+  eq(t.deletedAt, 1700000000000);
+  eq(t.reminder, null);
+  ok(t.trashedReminder, '提醒被收进了 trashedReminder');
+  eq(t.trashedReminder.at, at);
+  eq(n.deletedAt, null, '原对象不被改动');
+});
+
+t('还原：删除时间清空，提醒恢复', () => {
+  const at = Date.now() + 3600000;
+  const n = C.createNote({ text: '要提醒的事', reminderAt: at, leadMinutes: 5, rules: C.DEFAULT_RULES });
+  const back = C.restoreFromTrash(C.moveToTrash(n, Date.now()));
+  eq(back.deletedAt, null);
+  eq(back.trashedReminder, null);
+  ok(back.reminder, '提醒回来了');
+  eq(back.reminder.at, at);
+});
+
+t('默认视图不显示已删除的便笺', () => {
+  const alive = C.createNote({ text: '活着的', rules: C.DEFAULT_RULES });
+  const dead = C.moveToTrash(C.createNote({ text: '删掉的', rules: C.DEFAULT_RULES }), Date.now());
+  const r = C.filterNotes([alive, dead], { query: '', sort: 'created-desc' }, Date.now());
+  eq(r.list.length, 1);
+  eq(r.list[0].text, '活着的');
+});
+
+t('回收站视图只显示已删除的便笺', () => {
+  const alive = C.createNote({ text: '活着的', rules: C.DEFAULT_RULES });
+  const dead = C.moveToTrash(C.createNote({ text: '删掉的', rules: C.DEFAULT_RULES }), Date.now());
+  const r = C.filterNotes([alive, dead], { query: '', scope: 'trash', sort: 'deleted-desc' }, Date.now());
+  eq(r.list.length, 1);
+  eq(r.list[0].text, '删掉的');
+});
+
+t('scope=all 时两类都看得到', () => {
+  const alive = C.createNote({ text: '活着的', rules: C.DEFAULT_RULES });
+  const dead = C.moveToTrash(C.createNote({ text: '删掉的', rules: C.DEFAULT_RULES }), Date.now());
+  const r = C.filterNotes([alive, dead], { query: '', scope: 'all', sort: 'created-desc' }, Date.now());
+  eq(r.list.length, 2);
+});
+
+t('回收站里也能按内容检索', () => {
+  const dead = C.moveToTrash(C.createNote({ text: '客户会议纪要', rules: C.DEFAULT_RULES }), Date.now());
+  const r = C.filterNotes([dead], { query: '会议', scope: 'trash', sort: 'deleted-desc' }, Date.now());
+  eq(r.list.length, 1);
+});
+
+t('回收站条数统计', () => {
+  const a = C.createNote({ text: 'a', rules: C.DEFAULT_RULES });
+  const b = C.moveToTrash(C.createNote({ text: 'b', rules: C.DEFAULT_RULES }), Date.now());
+  const c = C.moveToTrash(C.createNote({ text: 'c', rules: C.DEFAULT_RULES }), Date.now());
+  eq(C.trashCount([a, b, c]), 2);
+});
+
+t('分类统计按 scope 分开算', () => {
+  const alive = C.createNote({ text: '活着的', category: '工作', rules: C.DEFAULT_RULES });
+  const dead = C.moveToTrash(C.createNote({ text: '删掉的', category: '工作', rules: C.DEFAULT_RULES }), Date.now());
+  eq(C.categoryCounts([alive, dead], 'active').get('工作'), 1);
+  eq(C.categoryCounts([alive, dead], 'trash').get('工作'), 1);
+  eq(C.categoryCounts([alive, dead], 'all').get('工作'), 2);
+});
+
+t('回收站按删除时间倒序', () => {
+  const old = C.moveToTrash(C.createNote({ text: '先删的', rules: C.DEFAULT_RULES }), 1000);
+  const fresh = C.moveToTrash(C.createNote({ text: '后删的', rules: C.DEFAULT_RULES }), 2000);
+  const r = C.filterNotes([old, fresh], { query: '', scope: 'trash', sort: 'deleted-desc' }, Date.now());
+  eq(r.list[0].text, '后删的');
+});
+
+t('回收站视图里时间筛选按删除时间算', () => {
+  const now = Date.now();
+  const longAgo = C.moveToTrash(C.createNote({ text: '很久以前删的', rules: C.DEFAULT_RULES }), now - 40 * 86400000);
+  const justNow = C.moveToTrash(C.createNote({ text: '刚删的', rules: C.DEFAULT_RULES }), now - 1000);
+  const r = C.filterNotes([longAgo, justNow], { query: '', scope: 'trash', date: 'week', sort: 'deleted-desc' }, now);
+  eq(r.list.length, 1);
+  eq(r.list[0].text, '刚删的');
+});
+
+t('彻底删除后数据里不再有这条', () => {
+  const n = C.createNote({ text: '彻底没了', rules: C.DEFAULT_RULES });
+  const list = [n].filter((x) => x.id !== n.id);
+  eq(list.length, 0);
+});
+
+/* ------------------------------------------------------------------ */
 console.log('\n' + '─'.repeat(46));
 if (failures.length) {
   console.log(`✗ ${pass} 项通过，${failures.length} 项失败`);

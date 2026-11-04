@@ -518,6 +518,8 @@
       updatedAt: Number(n.updatedAt) || createdAt,
       pinned: !!n.pinned,
       reminder,
+      deletedAt: n.deletedAt ? Number(n.deletedAt) : null,
+      trashedReminder: n.trashedReminder || null,
     };
   }
 
@@ -538,6 +540,8 @@
       createdAt: now,
       updatedAt: now,
       pinned: !!input.pinned,
+      deletedAt: null,
+      trashedReminder: null,
       reminder: input.reminderAt
         ? computeReminder(
             Number(input.reminderAt),
@@ -571,15 +575,16 @@
    * 过滤 / 排序
    * ------------------------------------------------------------------ */
 
+  /** 时间区间（传时间戳，不传便笺） */
   const DATE_RANGES = {
     all: () => true,
-    today: (n, now) => {
+    today: (ts, now) => {
       const d = new Date(now);
-      const c = new Date(n.createdAt);
+      const c = new Date(ts);
       return d.getFullYear() === c.getFullYear() && d.getMonth() === c.getMonth() && d.getDate() === c.getDate();
     },
-    week: (n, now) => now - n.createdAt <= 7 * DAY,
-    month: (n, now) => now - n.createdAt <= 30 * DAY,
+    week: (ts, now) => now - ts <= 7 * DAY,
+    month: (ts, now) => now - ts <= 30 * DAY,
   };
 
   const SORTS = {
@@ -592,6 +597,8 @@
       return av - bv;
     },
     title: (a, b) => String(a.text).localeCompare(String(b.text), 'zh-Hans-CN'),
+    'deleted-desc': (a, b) => (b.deletedAt || 0) - (a.deletedAt || 0),
+    'deleted-asc': (a, b) => (a.deletedAt || 0) - (b.deletedAt || 0),
   };
 
   /**
@@ -604,7 +611,11 @@
     const nowMs = now == null ? Date.now() : now;
     const matcher = buildMatcher(ui.query, { regex: !!ui.regex });
     const range = DATE_RANGES[ui.date] || DATE_RANGES.all;
+    const scope = ui.scope || 'active';
     const out = (notes || []).filter((n) => {
+      // 回收站：只看已删除 / 只看未删除
+      if (scope === 'active' && n.deletedAt) return false;
+      if (scope === 'trash' && !n.deletedAt) return false;
       if (!matcher.ok) return true; // 正则非法时不筛，展示全部 + 错误提示
       if (!matcher.empty) {
         const hitText = matcherTest(matcher, n.text);
@@ -622,7 +633,7 @@
         if (want === 'expired' && st !== 'expired') return false;
         if (want === 'none' && st !== 'none') return false;
       }
-      if (!range(n, nowMs)) return false;
+      if (!range(scope === 'trash' ? n.deletedAt : n.createdAt, nowMs)) return false;
       return true;
     });
     const sorter = SORTS[ui.sort] || SORTS['created-desc'];
@@ -630,13 +641,47 @@
     return { list: out, matcher };
   }
 
-  /** 分类统计 */
-  function categoryCounts(notes) {
+  /** 分类统计（scope 同 filterNotes：active 只算未删除的，trash 只算已删除的） */
+  function categoryCounts(notes, scope) {
+    const scopeName = scope || 'active';
     const map = new Map();
     for (const n of notes || []) {
+      if (scopeName === 'active' && n.deletedAt) continue;
+      if (scopeName === 'trash' && !n.deletedAt) continue;
       map.set(n.category, (map.get(n.category) || 0) + 1);
     }
     return map;
+  }
+
+  /** 回收站里的条数 */
+  function trashCount(notes) {
+    let n = 0;
+    for (const x of notes || []) if (x && x.deletedAt) n++;
+    return n;
+  }
+
+  /** 软删除：移进回收站（提醒先收起来，免得它在回收站里响） */
+  function moveToTrash(note, now) {
+    const n = Object.assign({}, note);
+    n.deletedAt = now == null ? Date.now() : now;
+    n.updatedAt = Date.now();
+    if (n.reminder) {
+      n.trashedReminder = n.reminder;
+      n.reminder = null;
+    }
+    return n;
+  }
+
+  /** 从回收站还原（提醒一并恢复） */
+  function restoreFromTrash(note) {
+    const n = Object.assign({}, note);
+    n.deletedAt = null;
+    n.updatedAt = Date.now();
+    if (n.trashedReminder) {
+      n.reminder = n.trashedReminder;
+      n.trashedReminder = null;
+    }
+    return n;
   }
 
   return {
@@ -683,5 +728,8 @@
     deserialize,
     filterNotes,
     categoryCounts,
+    trashCount,
+    moveToTrash,
+    restoreFromTrash,
   };
 });

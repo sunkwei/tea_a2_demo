@@ -89,6 +89,32 @@
 
 ---
 
+## 🗑 回收站
+
+![回收站](docs/trash.png)
+
+删除不再是真的删掉——便笺会被**移进回收站**，随时可以还原。
+
+| 操作 | 结果 |
+| --- | --- |
+| 便笺卡片上的「删除」 | 移进回收站（软删除），底部提示「已移入回收站，可随时还原」 |
+| 工具栏「🗑 回收站 N」 | 切到回收站视图，N 是里面的条数；再点一次切回便笺列表 |
+| 回收站里的「↩ 还原」 | 便笺回到列表，**连原来的提醒一起恢复** |
+| 回收站里的「🗑 彻底删除」 | 真的删掉，不可恢复（有二次确认） |
+| 回收站视图里的「清空回收站」 | 一次性清空（同样有二次确认） |
+
+几个细节：
+
+- 回收站里的便笺**不触发提醒**——移进去时提醒会先收起来，还原时再放回去；
+- 回收站视图支持**搜索、正则、分类、底色筛选**，时间筛选按「删除时间」算；
+- 排序多出「按删除时间（新→旧 / 旧→新）」两项；
+- 回收站视图里会隐藏「＋ 新建」和右下角的悬浮按钮，避免误建；
+- 回收站状态存在同一份 localStorage 里，刷新后还在。
+
+> 实现：`core.js` 的 `moveToTrash()` / `restoreFromTrash()`（纯函数，可离线断言）、`filterNotes()` 的 `scope` 参数（`active` / `trash` / `all`）。
+
+---
+
 ## ✨ AI 增强（接本机 tea_a2）
 
 便笺可以调用本机 tea_a2 的 `POST /api/llm/chat` 做增强。**默认关闭**——关闭时应用完全离线、一个网络请求都不发；打开后才会有内容离开本机。
@@ -148,8 +174,8 @@ sticky-notes/
 │  ├─ app.js             # 交互层：DOM 渲染 / 增删改查 / 提醒调度 / 通知申请 / 设置面板
 │  └─ styles.css         # 样式：便笺卡片、高对比徽章、弹窗、AI 面板、响应式
 └─ tools/
-   ├─ selftest.mjs       # 81 项离线断言（Node 直跑，无需浏览器、无需接口）
-   ├─ verify.mjs         # 无头 Edge 端到端验证（44 项 + 截图，含真实 AI 调用）
+   ├─ selftest.mjs       # 94 项离线断言（Node 直跑，无需浏览器、无需接口）
+   ├─ verify.mjs         # 无头 Edge 端到端验证 57 项（含回收站与真实 AI 调用）
    ├─ ai-check.mjs       # AI 接口联调（17 项，打真实 tea_a2）
    ├─ build-single.mjs   # 打包单文件版
    ├─ serve.mjs          # 本地 HTTP 服务器（拿桌面通知用）
@@ -163,7 +189,7 @@ sticky-notes/
 ## 命令
 
 ```bash
-node sticky-notes/tools/selftest.mjs            # 81 项离线断言（颜色/分类/正则/提醒/过滤/AI 提示词与解析）
+node sticky-notes/tools/selftest.mjs            # 94 项离线断言（颜色/分类/正则/提醒/过滤/AI 提示词与解析）
 node sticky-notes/tools/verify.mjs              # 无头 Edge 端到端验证 + 截图（file:// 真实场景，含 AI）
 node sticky-notes/tools/verify.mjs sticky-notes.html   # 同上，验证单文件版
 node sticky-notes/tools/ai-check.mjs            # AI 接口联调（打真实 tea_a2；接口没起会自动跳过）
@@ -178,7 +204,7 @@ node sticky-notes/tools/serve.mjs              # http://127.0.0.1:5177/
 EDGE_PATH=/path/to/chrome node sticky-notes/tools/verify.mjs
 ```
 
-`verify.mjs` 用 Chrome DevTools Protocol 驱动真实浏览器，覆盖：file:// 启动、localStorage 可用、新建便笺 → 自动归类 → 选底色 → 对比度达标 → 提前 5 分钟触发提醒 → 应用内兜底横幅 → 普通/正则/非法正则检索 → 刷新后持久化 → **AI 归类 / AI 时间抽取 / AI 问答 / AI 拆条并批量保存** → 全程零 JS 异常。
+`verify.mjs` 用 Chrome DevTools Protocol 驱动真实浏览器，覆盖：file:// 启动、localStorage 可用、新建便笺 → 自动归类 → 选底色 → 对比度达标 → 提前 5 分钟触发提醒 → 应用内兜底横幅 → 普通/正则/非法正则检索 → 刷新后持久化 → **回收站：软删除 → 进回收站 → 还原 → 彻底删除** → **AI 归类 / AI 时间抽取 / AI 问答 / AI 拆条并批量保存** → 全程零 JS 异常。
 
 `ai-check.mjs` 则从 Node 侧直接打接口：连通性、分类、时间抽取、长文拆条、问答引用。
 

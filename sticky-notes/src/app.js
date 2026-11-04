@@ -28,6 +28,7 @@
   let ui = {
     query: '',
     regex: false,
+    scope: 'active', // active | trash
     category: 'all',
     color: 'all',
     reminder: 'all',
@@ -91,7 +92,8 @@
       el.searchInfo.classList.add('err');
       el.searchWrap.classList.add('invalid');
     } else if (matcher.empty) {
-      el.searchInfo.textContent = `共 ${state.notes.length} 条便笺`;
+      el.searchInfo.textContent =
+        ui.scope === 'trash' ? `回收站里共 ${C.trashCount(state.notes)} 条` : `共 ${activeNotes().length} 条便笺`;
       el.searchInfo.classList.remove('err');
       el.searchWrap.classList.remove('invalid');
     } else {
@@ -108,13 +110,43 @@
     if (!list.length) {
       el.grid.innerHTML = '';
       el.empty.hidden = false;
-      el.empty.querySelector('.msg').textContent = state.notes.length
-        ? '没有符合条件的便笺，换个筛选条件试试。'
-        : '还没有便笺，点右上角「＋ 新建」写第一条。';
+      el.empty.querySelector('.msg').textContent =
+        ui.scope === 'trash'
+          ? C.trashCount(state.notes)
+            ? '没有符合条件的已删除便笺。'
+            : '回收站是空的。'
+          : activeNotes().length
+          ? '没有符合条件的便笺，换个筛选条件试试。'
+          : '还没有便笺，点右上角「＋ 新建」写第一条。';
     } else {
       el.empty.hidden = true;
-      el.grid.innerHTML = list.map((n) => noteCard(n, matcher, now)).join('');
+      el.grid.innerHTML = list
+        .map((n) => (ui.scope === 'trash' ? trashCard(n, matcher) : noteCard(n, matcher, now)))
+        .join('');
     }
+  }
+
+  /** 回收站里的卡片：只给「还原 / 彻底删除」 */
+  function trashCard(n, matcher) {
+    const catColor = categoryColor(n.category);
+    const catFg = C.bestTextColor(catColor).color;
+    return `
+<article class="note trashed" data-id="${n.id}" style="--bg:${n.bg};--fg:${n.fg}">
+  <div class="note-head">
+    <span class="note-cat" style="background:${catColor};color:${catFg}">${C.escapeHtml(n.category)}</span>
+    <span class="spacer"></span>
+    <span class="trash-flag" title="已删除">🗑</span>
+  </div>
+  <div class="note-body">${C.highlight(n.text, matcher)}</div>
+  <div class="note-foot">
+    <span title="创建于 ${C.formatDateTimeSeconds(n.createdAt)}">🕒 ${C.formatDateTime(n.createdAt)}</span>
+    <span class="rm gone" title="删除于 ${C.formatDateTimeSeconds(n.deletedAt)}">🗑 删除于 ${C.formatDateTime(n.deletedAt)}</span>
+  </div>
+  <div class="note-acts">
+    <button data-act="restore">↩ 还原</button>
+    <button data-act="purge" class="danger">🗑 彻底删除</button>
+  </div>
+</article>`;
   }
 
   function noteCard(n, matcher, now) {
@@ -195,7 +227,9 @@
 
   function allCategories() {
     const set = new Set();
-    state.notes.forEach((n) => set.add(n.category));
+    state.notes.forEach((n) => {
+      if (!n.deletedAt) set.add(n.category);
+    });
     state.settings.rules.forEach((r) => r.name && set.add(r.name));
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
   }
@@ -219,7 +253,7 @@
 
 
   function renderChips() {
-    const counts = C.categoryCounts(state.notes);
+    const counts = C.categoryCounts(state.notes, ui.scope);
     const cats = allCategories().slice().sort((x, y) => {
       const dx = counts.get(y) || 0;
       const cx = counts.get(x) || 0;
@@ -228,7 +262,7 @@
     const parts = [
       `<button class="chip${ui.category === 'all' ? ' on' : ''}" data-cat="all" style="${
         ui.category === 'all' ? 'background:var(--brand);color:#fff' : ''
-      }">全部 <span class="n">${state.notes.length}</span></button>`,
+      }">全部 <span class="n">${scopeTotal()}</span></button>`,
     ];
     for (const c of cats) {
       const on = ui.category === c;
@@ -246,18 +280,30 @@
   }
 
   function renderStats(list, now) {
-    const pending = state.notes.filter((n) => {
+    if (ui.scope === 'trash') {
+      const trashed = state.notes.filter((n) => n.deletedAt);
+      const todayGone = trashed.filter((n) => now - n.deletedAt < 86400000).length;
+      el.stats.innerHTML = [
+        `<span class="stat">回收站 <b>${trashed.length}</b> 条</span>`,
+        `<span class="stat">当前显示 <b>${list.length}</b> 条</span>`,
+        `<span class="stat">24 小时内删除 <b>${todayGone}</b> 条</span>`,
+        `<span class="stat">可还原的还在这儿，<b>彻底删除</b>后不可恢复</span>`,
+      ].join('');
+      return;
+    }
+    const pending = activeNotes().filter((n) => {
       const s = C.reminderStatus(n, now).status;
       return s === 'pending' || s === 'due';
     }).length;
-    const today = state.notes.filter((n) => now - n.createdAt < 86400000).length;
-    const cats = new Set(state.notes.map((n) => n.category)).size;
+    const today = activeNotes().filter((n) => now - n.createdAt < 86400000).length;
+    const cats = new Set(activeNotes().map((n) => n.category)).size;
     el.stats.innerHTML = [
-      `<span class="stat">共 <b>${state.notes.length}</b> 条</span>`,
+      `<span class="stat">共 <b>${activeNotes().length}</b> 条</span>`,
       `<span class="stat">当前显示 <b>${list.length}</b> 条</span>`,
       `<span class="stat">待提醒 <b>${pending}</b> 条</span>`,
       `<span class="stat">24 小时内新增 <b>${today}</b> 条</span>`,
       `<span class="stat">分类 <b>${cats}</b> 个</span>`,
+      `<span class="stat">回收站 <b>${C.trashCount(state.notes)}> 条</span>`,
       `<span class="stat">数据存储：<b>${storageOK ? 'localStorage 已启用' : '仅内存（不可持久化）'}</b></span>`,
     ].join('');
   }
@@ -620,16 +666,79 @@
     toast(wasEdit ? '便笺已更新' : '便笺已创建', 'ok');
   }
 
+  /** 删除 → 移进回收站（可还原） */
   function deleteNote(id) {
     const n = state.notes.find((x) => x.id === id);
     if (!n) return;
-    if (!confirm(`删除这条便笺？\n\n${firstLine(n.text) || '(空便笺)'}`)) return;
-    state.notes = state.notes.filter((x) => x.id !== id);
+    const i = state.notes.indexOf(n);
+    state.notes[i] = C.moveToTrash(n, Date.now());
     save();
     closeEditor();
     render();
     scheduleReminders();
-    toast('便笺已删除');
+    toast('已移入回收站，可随时还原', 'warn');
+  }
+
+  /** 从回收站还原 */
+  function restoreNote(id) {
+    const n = state.notes.find((x) => x.id === id);
+    if (!n) return;
+    const i = state.notes.indexOf(n);
+    state.notes[i] = C.restoreFromTrash(n);
+    save();
+    render();
+    scheduleReminders();
+    toast('已还原到便笺列表', 'ok');
+  }
+
+  /** 彻底删除（不可恢复） */
+  function purgeNote(id) {
+    const n = state.notes.find((x) => x.id === id);
+    if (!n) return;
+    if (!confirm(`彻底删除？这一步不可恢复。\n\n${firstLine(n.text) || '(空便笺)'}`)) return;
+    state.notes = state.notes.filter((x) => x.id !== id);
+    save();
+    render();
+    scheduleReminders();
+    toast('已彻底删除', 'err');
+  }
+
+  /** 清空回收站 */
+  function emptyTrash() {
+    const n = C.trashCount(state.notes);
+    if (!n) {
+      toast('回收站已经是空的', 'warn');
+      return;
+    }
+    if (!confirm(`清空回收站里的 ${n} 条便笺？\n这一步不可恢复。`)) return;
+    state.notes = state.notes.filter((x) => !x.deletedAt);
+    save();
+    render();
+    scheduleReminders();
+    toast(`已清空回收站（${n} 条）`, 'err');
+  }
+
+  /** 切换「便笺列表 / 回收站」视图 */
+  function toggleScope() {
+    ui.scope = ui.scope === 'trash' ? 'active' : 'trash';
+    ui.sort = ui.scope === 'trash' ? 'deleted-desc' : 'created-desc';
+    ui.category = 'all';
+    el.sort.value = ui.sort;
+    el.filterCat.value = 'all';
+    el.filterReminder.value = 'all';
+    el.filterDate.value = 'all';
+    render();
+    updateTrashButton();
+  }
+
+  function updateTrashButton() {
+    const n = C.trashCount(state.notes);
+    if (!el.btnTrash) return;
+    el.btnTrash.classList.toggle('on', ui.scope === 'trash');
+    el.btnTrash.innerHTML = `🗑 回收站 <span class="n">${n}</span>`;
+    if (el.btnEmptyTrash) el.btnEmptyTrash.hidden = ui.scope !== 'trash';
+    if (el.btnNew) el.btnNew.hidden = ui.scope === 'trash';
+    if (el.fab) el.fab.hidden = ui.scope === 'trash';
   }
 
   /* ================================================================== *
@@ -829,7 +938,13 @@
       ui.pinnedOnly = el.filterPinned.checked;
       render();
     });
+    el.btnTrash.addEventListener('click', toggleScope);
+    el.btnEmptyTrash.addEventListener('click', emptyTrash);
     el.btnReset.addEventListener('click', () => {
+      if (ui.scope === 'trash') {
+        ui.scope = 'active';
+        updateTrashButton();
+      }
       ui.query = '';
       ui.regex = false;
       ui.category = 'all';
@@ -867,6 +982,12 @@
       const note = state.notes.find((n) => n.id === id);
       if (!note) return;
 
+      if (ui.scope === 'trash') {
+        if (!btn) return;
+        if (btn.dataset.act === 'restore') restoreNote(id);
+        else if (btn.dataset.act === 'purge') purgeNote(id);
+        return;
+      }
       if (!btn) {
         openEditor(id);
         return;
@@ -1063,6 +1184,16 @@
     return C.filterNotes(state.notes, ui, Date.now()).list;
   }
 
+  /** 未被删除的便笺 */
+  function activeNotes() {
+    return state.notes.filter((n) => !n.deletedAt);
+  }
+
+  /** 当前视图里的便笺总数 */
+  function scopeTotal() {
+    return ui.scope === 'trash' ? C.trashCount(state.notes) : activeNotes().length;
+  }
+
   /** 所有分类名 */
   function aiCategories() {
     return allCategories();
@@ -1126,6 +1257,8 @@
     el.sort = $('#sort');
     el.filterPinned = $('#filter-pinned');
     el.btnReset = $('#btn-reset');
+    el.btnTrash = $('#btn-trash');
+    el.btnEmptyTrash = $('#btn-empty-trash');
 
     el.noteModal = $('#note-modal');
     el.nmTitle = $('#nm-title');
@@ -1181,11 +1314,14 @@
 <option value="created-asc">最早创建</option>
 <option value="updated-desc">最近更新</option>
 <option value="reminder-asc">提醒时间最近</option>
-<option value="title">按内容排序</option>`;
+<option value="title">按内容排序</option>
+<option value="deleted-desc">按删除时间（新→旧）</option>
+<option value="deleted-asc">按删除时间（旧→新）</option>`;
 
     load();
     bind();
     render();
+    updateTrashButton();
 
     // 把应用能力交给 AI 交互层
     if (window.StickyAIUI) {
