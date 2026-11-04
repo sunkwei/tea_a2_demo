@@ -1,0 +1,6 @@
+# 运行时依赖
+# - requests：抓 B 站接口、发 HTTP 请求
+# - pyyaml：读 ~/.tea_agent/provider.yaml（provider 配置）
+# 只有 --login（浏览器登录）需要标准库就够了。
+requests>=2.31
+PyYAML>=6.0
