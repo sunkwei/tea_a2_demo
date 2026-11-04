@@ -20,6 +20,8 @@
   let currentText = '';
   let currentUrl = '';
   let busy = false;
+  let lastX = 0;
+  let lastY = 0;
   let hideTimer = null;
 
   // ────────────────────────── 与后台通信 ──────────────────────────
@@ -143,7 +145,8 @@
 
     const panelClose = document.createElement('button');
     panelClose.type = 'button';
-    panelClose.textContent = '×';
+    panelClose.className = 'close-btn';
+    panelClose.textContent = '关闭';
     panelClose.addEventListener('click', (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -191,6 +194,8 @@
     currentText = text;
     currentUrl = '';
     busy = false;
+    lastX = x;
+    lastY = y;
     panel.classList.remove('open');
     panelBody.textContent = '';
     panelTitle.textContent = '';
@@ -264,14 +269,10 @@
     }, 0);
   }
 
-  function onMouseDown(ev) {
-    if (inBanner(ev.target)) return;
-    if (busy) return;
-    hide();
-  }
-
-  function onScroll() {
-    if (!busy) hide();
+  // 结果面板是「常驻」的：滚动、点页面别处都不收起，只有关闭按钮（或 Esc）才关。
+  function onResize() {
+    if (!host || host.style.display === 'none') return;
+    place(lastX, lastY);
   }
 
   function onKeyDown(ev) {
@@ -396,10 +397,8 @@
 
   document.addEventListener('mouseup', onPointerUp, true);
   document.addEventListener('keyup', onKeyUp, true);
-  document.addEventListener('mousedown', onMouseDown, true);
   document.addEventListener('keydown', onKeyDown, true);
-  window.addEventListener('scroll', onScroll, true);
-  window.addEventListener('resize', onScroll);
+  window.addEventListener('resize', onResize);
 
   // 长请求（比如带联网搜索的总结）时，MV3 的事件页可能被回收；
   // 挂一条长连接把后台页钉住，消息才不会丢。

@@ -101,6 +101,12 @@
   cursor: pointer;
 }
 .panel-head button:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.panel-head button.close-btn {
+  background: rgba(255, 255, 255, 0.14);
+  color: #e8eaed;
+  margin-left: 2px;
+}
+.panel-head button.close-btn:hover { background: rgba(232, 90, 90, 0.85); color: #fff; }
 .panel-body {
   padding: 10px 12px;
   max-height: 300px;
