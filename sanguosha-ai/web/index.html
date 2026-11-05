@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI 三国杀 · minimax-m3.1-flash / deepseek-flash / mimo-v2.6-flash</title>
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="blade">⚔</span>
+      <span class="title">AI 三国杀</span>
+      <span class="subtitle">minimax-m3.1-flash · deepseek-flash · mimo-v2.6-flash</span>
+    </div>
+    <div class="topinfo">
+      <span id="turnBadge" class="badge">准备中</span>
+      <span id="connBadge" class="badge muted">连接中…</span>
+    </div>
+    <div class="controls">
+      <label class="speed">
+        速度
+        <input id="speed" type="range" min="0.5" max="4" step="0.5" value="2" />
+        <span id="speedVal">2.0×</span>
+      </label>
+      <button id="btnStart" class="btn primary">开新局</button>
+      <button id="btnPeek" class="btn">明牌</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="table-wrap">
+      <div class="table">
+        <div class="felt"></div>
+        <div class="table-center">
+          <div class="deck">
+            <div class="deck-label">牌堆</div>
+            <div class="deck-num" id="deckNum">0</div>
+          </div>
+          <div class="deck">
+            <div class="deck-label">弃牌堆</div>
+            <div class="deck-num" id="discardNum">0</div>
+          </div>
+        </div>
+        <div id="seats" class="seats"></div>
+        <div id="fxLayer" class="fx-layer"></div>
+      </div>
+      <div class="hand-area">
+        <div class="hand-head">
+          <span id="handTitle">手牌</span>
+          <span id="handHint" class="hint">点击上方座位可查看该角色手牌</span>
+        </div>
+        <div id="hand" class="hand"></div>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="panel models">
+        <div class="panel-title">参战模型</div>
+        <div id="modelList" class="model-list"></div>
+      </div>
+      <div class="panel log">
+        <div class="panel-title">对局日志</div>
+        <div id="log" class="log-body"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+<script src="./main.js" type="module"></script>
+</body>
+</html>
