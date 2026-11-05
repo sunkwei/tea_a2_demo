@@ -1,0 +1,5 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+sanguosha_replay_*.txt
+cli_full.txt

@@ -220,3 +220,26 @@ python main.py --doctor        # 检查 LLM 连通性
 ```
 
 细节见 [`ai-town/README.md`](ai-town/README.md)。
+
+---
+
+## 📺 B 站 / 📚 知乎：看过的内容，交给 LLM 提炼（`bilibili/`、`zhihu/`）
+
+同一仓库里还有两个**命令行工具**（Python）：把**观看历史**和**收藏夹 / 回答**抓下来，
+送 LLM 出一份**结构化**的摘要，最后拼成 markdown digest。
+
+- 📺 **`bilibili/`**：B 站观看历史 → 字幕 → LLM 摘要 → 周报。字幕会「串台」（`x/player/v2` 有时返回别的视频的轨），
+  这里用权威轨道列表 + 字幕 URL 里的 `aid/cid` 双重校验，**宁可没有字幕，也不要错的**。
+- 📚 **`zhihu/`**：知乎抓取 / 阅读 / 发回答 / 发专栏，外加一条「读最近看过的 → 让模型写一篇新的」的路子
+  （知乎**没有浏览历史接口了**，「最近读过的」从收藏夹 + 本地语料凑）。写操作**默认 dry-run**，`--yes` 才真投递。
+- 🧰 **`shared/`**：两个应用共用的一半——LLM 那一层（挑 provider / chat / 从回复里抠 JSON）
+  和登录入口（开有头浏览器登录，把 storageState 存下来）。
+
+```bash
+cd bilibili && python bili.py --login && python bili.py all       # B 站：登录 → 抓 → 摘要 → digest
+cd zhihu    && python zhihu.py --login && python zhihu.py digest   # 知乎：登录 → 摘要 → digest
+python zhihu/tests/test_zhihu_llm_post.py                        # 22 项离线断言（不碰外网）
+```
+
+细节见 [`bilibili/README.md`](bilibili/README.md)、[`zhihu/README.md`](zhihu/README.md)、
+[`shared/README.md`](shared/README.md)。

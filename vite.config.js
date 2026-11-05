@@ -22,6 +22,13 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     open: false,
+    proxy: {
+      // AI 三国杀的后端（SSE 事件流 + 对局接口）
+      '/api': {
+        target: 'http://127.0.0.1:8765',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     target: 'es2020',
@@ -34,6 +41,7 @@ export default defineConfig({
         snake: r('./snake-race/index.html'),
         film: r('./attention-film/index.html'),
         iptv: r('./iptv-player/index.html'),
+        sanguosha: r('./sanguosha-ai/web/index.html'),
       },
     },
   },

@@ -19,6 +19,8 @@ sticky-notes/sticky-notes.html
 GoDot/.godot/
 GoDot/shots/
 
-# AI 小镇：存档与 pycache
+# AI 小镇：存档
 ai-town/saves/
-ai-town/**/__pycache__/
+
+# Python 字节码
+__pycache__/
