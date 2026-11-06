@@ -30,7 +30,9 @@
     "sticky:verify": "node sticky-notes/tools/verify.mjs",
     "sticky:build": "node sticky-notes/tools/build-single.mjs",
     "sticky:serve": "node sticky-notes/tools/serve.mjs",
-    "sticky:ai": "node sticky-notes/tools/ai-check.mjs"
+    "sticky:ai": "node sticky-notes/tools/ai-check.mjs",
+    "test:rubik": "node rubiks-cube/tools/selftest.mjs",
+    "rubik:verify": "node rubiks-cube/tools/verify.mjs"
   },
   "keywords": [
     "three.js",

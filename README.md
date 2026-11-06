@@ -198,6 +198,28 @@ npm run sticky:serve      # http://127.0.0.1:5177/（此模式才有真正的桌
 细节见 [`sticky-notes/README.md`](sticky-notes/README.md)。
 ---
 
+## 🧊 附：三阶魔方还原教程（WebGL）
+
+同一仓库里还有一个**纯前端、零依赖**的三阶魔方（`rubiks-cube/`）——双击 `rubiks-cube/index.html` 就能用，
+不需要服务器、不需要构建、不联网。
+
+![三阶魔方教程](rubiks-cube/tools/shots/01-initial.png)
+
+- 🧊 **手写 WebGL 渲染**：26 个块 + 54 张贴纸运行时算出来，配 Blinn-Phong 高光与塑料边框
+- 🖱️ **鼠标拧层**：按住任意贴纸拖动即可拧动那一层，拖动方向决定转向；空白处拖动转视角，滚轮缩放
+- 📐 **三维坐标轴**：画面角落常驻 X/Y/Z 轴 gizmo，随视角实时旋转
+- 📖 **7 步还原教程**：白色十字 → 白色角块 → 中层棱块 → 黄色十字 → 黄色面 → 顶棱归位 → 顶角归位；
+  自动判定当前进度、高亮当前要处理的块、给出**经整盘模拟校验**的公式并可一键演示
+- ⏱ **计时 / 步数 / 撤销 / 打乱 / 复位**，右侧还有实时六面展开图
+
+```bash
+node rubiks-cube/tools/selftest.mjs     # 25 项离线断言（纯 Node）
+node rubiks-cube/tools/verify.mjs       # 35 项无头 Edge 端到端验证 + 截图（file:// 真实场景）
+```
+
+细节见 [`rubiks-cube/README.md`](rubiks-cube/README.md)。
+---
+
 ## 🏘️ AI 小镇：无限人生（`ai-town/`）
 
 同一仓库里还有一款 **由 LLM 实时生成一切的文字模拟经营游戏**（Python + Tkinter）：你是新上任的镇长，居民、每日事件、主线剧情、危机全部由 LLM 现场生成，**没有两次相同的存档**。

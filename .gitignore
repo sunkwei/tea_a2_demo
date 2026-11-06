@@ -11,6 +11,7 @@ attention-film/tools/shots/
 iptv-player/tools/shots/
 iptv-player/dist-single/
 sticky-notes/tools/shots/
+rubiks-cube/tools/shots/
 sticky-notes/sticky-notes.html
 # tea_agent 运行目录（会话记录 / 工具 / 临时文件，不入库）
 .tea_agent_run/

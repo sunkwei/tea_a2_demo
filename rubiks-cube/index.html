@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>三阶魔方还原教程 · WebGL</title>
+<style>
+  :root {
+    --bg: #0b0d13;
+    --panel: rgba(22, 26, 36, 0.82);
+    --panel-line: rgba(255, 255, 255, 0.08);
+    --text: #e8ecf4;
+    --muted: #9aa4b8;
+    --accent: #ffb020;
+    --accent-2: #4da3ff;
+    --ok: #35c88a;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: radial-gradient(1200px 800px at 50% -10%, #1b2130 0%, var(--bg) 60%);
+    color: var(--text);
+    font: 14px/1.6 "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", system-ui, -apple-system, "Segoe UI", sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { display: flex; flex-direction: column; height: 100%; }
+
+  /* ---------------- 顶栏 ---------------- */
+  header {
+    display: flex; align-items: center; gap: 18px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--panel-line);
+    background: rgba(12, 15, 22, 0.7);
+    backdrop-filter: blur(12px);
+    flex: 0 0 auto;
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 { font-size: 17px; margin: 0; letter-spacing: .5px; }
+  .brand span { color: var(--muted); font-size: 12px; }
+  .stats { display: flex; gap: 16px; align-items: center; margin-left: auto; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; line-height: 1.2; min-width: 62px; }
+  .stat b { font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .stat i { font-style: normal; color: var(--muted); font-size: 11px; }
+  .badge {
+    padding: 3px 10px; border-radius: 999px; font-size: 12px;
+    border: 1px solid var(--panel-line); background: rgba(255,255,255,.04);
+  }
+  .badge.ok { color: var(--ok); border-color: rgba(53,200,138,.45); background: rgba(53,200,138,.12); }
+  .badge.run { color: var(--accent); border-color: rgba(255,176,32,.4); background: rgba(255,176,32,.1); }
+
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font: inherit; color: var(--text); cursor: pointer;
+    background: rgba(255,255,255,.06); border: 1px solid var(--panel-line);
+    padding: 6px 12px; border-radius: 9px; transition: .15s;
+  }
+  button:hover { background: rgba(255,255,255,.12); transform: translateY(-1px); }
+  button:active { transform: none; }
+  button.primary { background: rgba(255,176,32,.16); border-color: rgba(255,176,32,.42); color: #ffd27a; }
+  button.primary:hover { background: rgba(255,176,32,.26); }
+  button.ghost { background: transparent; }
+  .viewbtns { display: flex; gap: 4px; }
+  .viewbtns button { padding: 6px 9px; font-size: 12px; }
+
+  /* ---------------- 主体 ---------------- */
+  main { flex: 1 1 auto; display: flex; min-height: 0; }
+  .stage { position: relative; flex: 1 1 auto; min-width: 0; }
+  canvas#gl { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  canvas#gl:active { cursor: grabbing; }
+
+  .axis-label {
+    position: absolute; transform: translate(-50%, -50%);
+    font-size: 12px; font-weight: 800; pointer-events: none;
+    letter-spacing: .5px; line-height: 1;
+    padding: 2px 5px; border-radius: 5px;
+    background: rgba(8, 10, 16, .55);
+    text-shadow: 0 1px 4px rgba(0,0,0,.9);
+  }
+  .stage-hint {
+    position: absolute; left: 16px; bottom: 14px; color: var(--muted);
+    font-size: 12px; pointer-events: none; max-width: 60%;
+  }
+  .stage-hint kbd {
+    background: rgba(255,255,255,.08); border: 1px solid var(--panel-line);
+    border-radius: 5px; padding: 0 5px; font: inherit; font-size: 11px;
+  }
+
+  /* ---------------- 右侧教程面板 ---------------- */
+  aside {
+    flex: 0 0 372px; max-width: 42vw; height: 100%; overflow-y: auto;
+    border-left: 1px solid var(--panel-line);
+    background: var(--panel); backdrop-filter: blur(14px);
+    padding: 14px 14px 40px;
+  }
+  aside::-webkit-scrollbar { width: 8px; }
+  aside::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 4px; }
+  .panel-title { font-size: 13px; color: var(--muted); letter-spacing: 1px; margin: 2px 4px 10px; }
+  .step {
+    border: 1px solid var(--panel-line); border-radius: var(--radius);
+    background: rgba(255,255,255,.035); margin-bottom: 8px; overflow: hidden;
+    transition: .18s;
+  }
+  .step.active { border-color: rgba(255,176,32,.5); background: rgba(255,176,32,.08); }
+  .step.done { opacity: .62; }
+  .step > .head {
+    display: flex; align-items: center; gap: 9px; padding: 9px 12px; cursor: pointer;
+  }
+  .step .num {
+    width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
+    display: grid; place-items: center; font-size: 11px; font-weight: 700;
+    background: rgba(255,255,255,.08); color: var(--muted);
+  }
+  .step.active .num { background: var(--accent); color: #2a1c00; }
+  .step.done .num { background: rgba(53,200,138,.22); color: var(--ok); }
+  .step .title { font-size: 13.5px; font-weight: 600; }
+  .step .brief { font-size: 12px; color: var(--muted); margin-left: auto; text-align: right; }
+  .step .body { padding: 0 12px 12px; font-size: 12.5px; color: #c8d0de; }
+  .step .body p { margin: 4px 0 8px; }
+  .task { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; }
+  .task .dot { color: var(--accent); }
+  .task code {
+    background: rgba(77,163,255,.12); border: 1px solid rgba(77,163,255,.25);
+    color: #9ccdff; border-radius: 6px; padding: 1px 7px; font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .5px;
+  }
+  .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .actions button { font-size: 12px; padding: 5px 10px; }
+
+  .net {
+    display: grid; grid-template-columns: repeat(4, auto); gap: 5px;
+    justify-content: center; margin: 6px 0 4px;
+  }
+  .face { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .face .cell { width: 15px; height: 15px; border-radius: 3px; background: #222; }
+  .net .cap { grid-column: 1 / -1; text-align: center; font-size: 11px; color: var(--muted); }
+  .face-cap { font-size: 10px; color: var(--muted); text-align: center; margin-bottom: 2px; }
+
+  .help { font-size: 12px; color: var(--muted); }
+  .help b { color: #cfd7e6; font-weight: 600; }
+  .help ul { margin: 6px 0; padding-left: 18px; }
+  .help li { margin: 3px 0; }
+
+  .zoom { display: flex; align-items: center; gap: 8px; }
+  input[type=range] { width: 110px; accent-color: var(--accent); }
+
+  @media (max-width: 900px) {
+    main { flex-direction: column; }
+    aside { flex: 0 0 auto; max-width: none; width: 100%; height: 46%; border-left: none; border-top: 1px solid var(--panel-line); }
+    .stage { flex: 1 1 auto; min-height: 46vh; }
+    header { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <h1>三阶魔方还原教程</h1>
+      <span>H5 + WebGL · 纯前端，无需后端</span>
+    </div>
+    <div class="toolbar">
+      <button id="btn-scramble" class="primary">打乱</button>
+      <button id="btn-reset">复位</button>
+      <button id="btn-undo">撤销</button>
+      <button id="btn-hint">提示</button>
+      <button id="btn-demo">演示这一步</button>
+    </div>
+    <div class="viewbtns">
+      <button data-view="front">前</button>
+      <button data-view="back">后</button>
+      <button data-view="left">左</button>
+      <button data-view="right">右</button>
+      <button data-view="top">上</button>
+      <button data-view="bottom">下</button>
+      <button data-view="reset">斜视</button>
+    </div>
+    <div class="stats">
+      <div class="zoom">
+        <span style="color:var(--muted);font-size:11px">缩放</span>
+        <input id="zoom" type="range" min="-40" max="60" value="0" />
+      </div>
+      <div class="stat"><b id="stat-time">0:00</b><i>用时</i></div>
+      <div class="stat"><b id="stat-moves">0</b><i>步数</i></div>
+      <div class="stat"><b id="stat-stage">1 / 7</b><i>进度</i></div>
+      <div class="badge ok" id="stat-state">已还原</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="stage" id="stage">
+      <canvas id="gl"></canvas>
+      <div class="stage-hint">
+        在贴纸上按住拖动即可<b>拧动那一层</b>；空白处拖动旋转视角，滚轮缩放。
+        键盘：<kbd>U</kbd><kbd>D</kbd><kbd>L</kbd><kbd>R</kbd><kbd>F</kbd><kbd>B</kbd> 转动（按住 Shift 逆时针），
+        <kbd>空格</kbd> 打乱，<kbd>H</kbd> 提示，<kbd>P</kbd> 演示。
+      </div>
+    </div>
+
+    <aside>
+      <div class="panel-title">还原教程 · 7 步</div>
+      <div id="steps"></div>
+
+      <div class="panel-title" style="margin-top:16px">六面展开</div>
+      <div class="net" id="net"></div>
+
+      <div class="panel-title" style="margin-top:16px">操作说明</div>
+      <div class="help">
+        <ul>
+          <li><b>拧层</b>：按住任意贴纸拖动，拖动方向决定转动方向，拖过 90° 自动吸附。</li>
+          <li><b>视角</b>：空白处拖动旋转；滚轮或滑块缩放；右上角按钮切换预设视角。</li>
+          <li><b>提示</b>：按当前步骤算出经过模拟校验的公式，点击「演示这一步」自动播放。</li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="src/core.js"></script>
+<script src="src/solver.js"></script>
+<script src="src/gl.js"></script>
+<script src="src/renderer.js"></script>
+<script src="src/camera.js"></script>
+<script src="src/controls.js"></script>
+<script src="src/main.js"></script>
+<script src="src/ui.js"></script>
+</body>
+</html>
