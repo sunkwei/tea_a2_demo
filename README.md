@@ -8,6 +8,33 @@
 
 ---
 
+## 🗂️ 项目总览
+
+这不只是「喵屋便利店」一个项目——仓库里还有 **13 个各自独立**的子项目：
+前端可视化、LLM 应用、内容抓取摘要、Godot/Blender 素材一应俱全。
+**完整索引见 [`docs/INDEX.md`](docs/INDEX.md)**（含技术栈、启动方式、依赖关系、脚本速查）。
+
+| | 项目 | 目录 | 定位 | 启动 |
+|---|------|------|------|------|
+| ① | 🐱 喵屋便利店 | 根 `src/` | 雨夜 3D 小镇（Three.js 程序化生成） | `npm run dev` |
+| ② | 🐍 贪吃蛇竞赛 | `snake-race/` | 5 种 AI 避让算法同场竞技 | `npm run dev` |
+| ③ | 🎬 Self-Attention 短片 | `attention-film/` | 60 秒图解 Transformer | `npm run dev` |
+| ④ | 📺 IPTV 剧场 | `iptv-player/` | 网页版直播播放器（87 个源） | `npm run dev` |
+| ⑤ | 📌 便笺 | `sticky-notes/` | 纯本地便笺（可接 tea_a2 做 AI） | 双击 `index.html` |
+| ⑥ | 🧊 三阶魔方教程 | `rubiks-cube/` | 手写 WebGL 3D 魔方 + 7 步还原教程 | 双击 `index.html` |
+| ⑦ | 🏘️ AI 小镇 | `ai-town/` | LLM 实时生成一切文字的模拟经营 | `python ai-town/main.py` |
+| ⑧ | ⚔️ AI 三国杀 | `sanguosha-ai/` | 三个大模型同台打三国杀 | `python sanguosha-ai/main.py --web` |
+| ⑨⑩ | 📺📚 B站/知乎 digest | `bilibili/` `zhihu/` | 看过什么 → LLM 摘要周报 | `python bilibili/bili.py fetch` |
+| ⑪ | 🦊 tea_a2 划词助手 | `tea-select/` | Firefox 扩展：划词即译/搜/总结 | `web-ext run` |
+| ⑫ | 🎮 GoDot 三国肉鸽 | `GoDot/` | Godot 4 项目 | Godot 打开 |
+| ⑬ | 🏗️ 青岛栈桥建模 | `zhanqiao/` | 真实尺寸 Blender 建模 | 打开 `.blend` |
+
+>
+> 三个 LLM 相关应用（便笺 / 划词助手 / 三国杀）默认连本机 `tea_a2`（`http://localhost:8383`）；
+> `shared/` 是 `bilibili/` 与 `zhihu/` 共用的登录态 + LLM 调用层。
+
+---
+
 ## 快速开始
 
 ```bash

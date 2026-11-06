@@ -25,3 +25,6 @@ ai-town/saves/
 
 # Python 字节码
 __pycache__/
+
+# 调试残渣
+/ERR
