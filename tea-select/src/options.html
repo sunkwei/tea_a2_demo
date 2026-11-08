@@ -23,6 +23,7 @@
         <label for="apiBase">接口地址</label>
         <input id="apiBase" type="text" spellcheck="false" placeholder="http://localhost:8383" />
         <button id="btnProviders" type="button">读取 tea_a2 的提供商</button>
+        <button id="btnRegion" type="button" title="在最近的网页标签页里划一个区域">划图识图</button>
       </div>
       <div class="row">
         <label for="provider">默认提供商</label>
@@ -89,6 +90,36 @@
         <code>/api/llm/chat</code> 现在认 <code>search: true</code>（默认地址这台是 0.18.4）：请求会带上网搜索。
         服务端搜索不稳时，可以把「搜索方式」切成 <code>extension</code>——由扩展自己抓搜索结果页再交给 tea_a2 归纳，
         或者关掉「交给 tea_a2 归纳」，只打开搜索页。
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>识图（划图）</h2>
+      <div class="row">
+        <label for="visionProvider">识图</label>
+        <input id="visionProvider" type="text" spellcheck="false" placeholder="提供商" />
+        <input id="visionModel" type="text" spellcheck="false" placeholder="模型" />
+        <label for="visionReasoning" class="inline">思考</label>
+        <select id="visionReasoning"></select>
+      </div>
+      <div class="row">
+        <label for="visionWorkspace">工作区</label>
+        <input id="visionWorkspace" type="text" spellcheck="false" placeholder="留空 = 自动挑一个" />
+        <label for="regionKey" class="inline">快捷键</label>
+        <input id="regionKey" type="text" spellcheck="false" placeholder="Alt+Shift+A" />
+        <label for="visionMaxSide" class="inline">最长边</label>
+        <input id="visionMaxSide" type="number" min="200" max="8000" step="100" />
+      </div>
+      <div class="row">
+        <label for="visionPrompt">提示词</label>
+        <textarea id="visionPrompt" rows="3" spellcheck="false"></textarea>
+      </div>
+      <p class="hint">
+        页面里按 <code>Alt+Shift+A</code> 进入划图模式：拖出一个矩形 → 抓图 → 交给 tea_a2 识别。
+        识图走的是 <code>POST /api/chat</code>（tea_a2 里唯一收图片的接口），
+        所以模型必须支持视觉（<code>provider.yaml</code> 里 <code>supports_vision: true</code>），
+        否则服务端会直接回 <code>vision_unsupported</code>。
+        抓到的图最长边默认 1600 像素，超出会等比缩小。
       </p>
     </section>
 

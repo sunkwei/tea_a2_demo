@@ -138,5 +138,67 @@
 }
 .panel-sources a { color: #7fb0ff; text-decoration: none; display: block; margin: 3px 0; }
 .panel-sources a:hover { text-decoration: underline; }
+/* 识图：横幅上的三个任务按钮用不上，藏掉；面板里放抓到的图 */
+.wrap.vision-mode .bar { display: none; }
+.panel-body img.shot {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+}
+`;
+
+  // 划图（选区）覆盖层的样式
+  root.TeaPickerCSS = `
+:host {
+  all: initial;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; }
+.pick-layer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  cursor: crosshair;
+  pointer-events: auto;
+  background: rgba(10, 12, 16, 0.18);
+}
+.pick-box {
+  position: fixed;
+  display: none;
+  border: 1.5px solid #4c8dff;
+  background: rgba(76, 141, 255, 0.1);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.42);
+  pointer-events: none;
+}
+.pick-box.on { display: block; }
+.pick-hint {
+  position: fixed;
+  left: 50%;
+  top: 26px;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(28, 30, 34, 0.95);
+  color: #e9eaec;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
+  pointer-events: none;
+}
 `;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

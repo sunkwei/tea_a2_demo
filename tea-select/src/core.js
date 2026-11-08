@@ -33,6 +33,17 @@
     searchUrlTemplate: 'https://www.bing.com/search?q={q}',
     searchAiSummary: true, // 把抓到的搜索结果交给 tea_a2 归纳
 
+    // —— 识图（划图）——
+    regionKey: 'Alt+Shift+A', // 划图快捷键（页面里按；浏览器级快捷键见 manifest）
+    visionProvider: '',   // 留空 = 用默认提供商
+    visionModel: '',      // 留空 = 用默认模型（要选「能看图」的模型）
+    visionWorkspace: '',  // tea_a2 的工作区 id；留空 = 自动挑一个
+    visionPrompt: '描述这张图片的内容；如果图里有文字，把文字原样抄出来。用中文回答。',
+    visionSystemPrompt:
+      '你是一个严谨的图片识别助手：用中文回答；图里有文字就原样抄出来；看不清就说不确定，不要编造。',
+    visionMaxSide: 1600,  // 抓到的图最长边（像素），超了就等比缩小
+    visionReasoning: 'none',
+
     // —— 交互 ——
     minChars: 2,
     maxTextChars: 4000,
@@ -60,6 +71,7 @@
     translate: { name: '翻译' },
     search: { name: '搜索' },
     summarize: { name: '总结' },
+    vision: { name: '识图' },
   };
 
   const REASONING_LEVELS = ['auto', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
@@ -394,6 +406,191 @@
     return body;
   }
 
+
+  // ────────────────────────── 划图（区域选择） ──────────────────────────
+
+  /** 两个点 → 归一化的矩形（左上角 + 宽高） */
+  function normalizeRect(a, b) {
+    const p1 = a || {};
+    const p2 = b || {};
+    const x1 = Number(p1.x) || 0;
+    const y1 = Number(p1.y) || 0;
+    const x2 = Number(p2.x) || 0;
+    const y2 = Number(p2.y) || 0;
+    const left = Math.min(x1, x2);
+    const top = Math.min(y1, y2);
+    const right = Math.max(x1, x2);
+    const bottom = Math.max(y1, y2);
+    return { x: left, y: top, w: right - left, h: bottom - top };
+  }
+
+  /** 把矩形裁进视口内 */
+  function clampRect(rect, maxW, maxH) {
+    const r = rect || {};
+    const mw = Number(maxW) || 0;
+    const mh = Number(maxH) || 0;
+    let x = Number(r.x) || 0;
+    let y = Number(r.y) || 0;
+    let w = Number(r.w) || 0;
+    let h = Number(r.h) || 0;
+    if (x < 0) {
+      w += x;
+      x = 0;
+    }
+    if (y < 0) {
+      h += y;
+      y = 0;
+    }
+    if (mw > 0 && x + w > mw) w = mw - x;
+    if (mh > 0 && y + h > mh) h = mh - y;
+    if (w < 0) w = 0;
+    if (h < 0) h = 0;
+    return { x, y, w, h };
+  }
+
+  /**
+   * 截图的缩放换算：Firefox 抓回来的图，可能是「含滚动条」的视口，也可能是
+   * 「不含滚动条」的视口，两种候选各算一遍缩放，取宽高一致的那一组
+   * （一致的才说明这块视口就是被抓下来的那块）。
+   */
+  function computeCaptureScale(imgW, imgH, view, dpr) {
+    const iw = Number(imgW) || 0;
+    const ih = Number(imgH) || 0;
+    const v = view || {};
+    const d = Number(dpr) > 0 ? Number(dpr) : 1;
+    const cands = [];
+    const push = (vw, vh) => {
+      if (!(vw > 0) || !(vh > 0)) return;
+      const sx = iw / vw;
+      const sy = ih / vh;
+      if (!(sx > 0) || !(sy > 0)) return;
+      cands.push({
+        sx,
+        sy,
+        diff: Math.abs(sx - sy) / Math.max(sx, sy),
+        offDpr: Math.abs((sx + sy) / 2 - d),
+      });
+    };
+    push(Number(v.w), Number(v.h));   // innerWidth/innerHeight（含滚动条）
+    push(Number(v.cw), Number(v.ch)); // clientWidth/clientHeight（不含滚动条）
+    if (!cands.length) return { sx: d, sy: d };
+    cands.sort((a, b) => (a.diff - b.diff) || (a.offDpr - b.offDpr));
+    return { sx: cands[0].sx, sy: cands[0].sy };
+  }
+
+  /** 视口坐标的选区 → 截图像素坐标，并裁到图内 */
+  function cropRectToPixels(rect, scale, imgW, imgH) {
+    const s = scale || {};
+    const sx = Number(s.sx) > 0 ? Number(s.sx) : 1;
+    const sy = Number(s.sy) > 0 ? Number(s.sy) : 1;
+    const r = rect || {};
+    const iw = Number(imgW) || 0;
+    const ih = Number(imgH) || 0;
+    let x = Math.round((Number(r.x) || 0) * sx);
+    let y = Math.round((Number(r.y) || 0) * sy);
+    let w = Math.round((Number(r.w) || 0) * sx);
+    let h = Math.round((Number(r.h) || 0) * sy);
+    if (iw > 0) {
+      x = Math.max(0, Math.min(x, iw));
+      w = Math.max(0, Math.min(w, iw - x));
+    }
+    if (ih > 0) {
+      y = Math.max(0, Math.min(y, ih));
+      h = Math.max(0, Math.min(h, ih - y));
+    }
+    return { x, y, w: Math.max(1, w), h: Math.max(1, h) };
+  }
+
+  /** 等比缩小后的边长（最长边不超过 maxSide） */
+  function fitSide(w, h, maxSide) {
+    const limit = Number(maxSide) > 0 ? Number(maxSide) : 0;
+    if (!limit) return { w: Number(w) || 0, h: Number(h) || 0 };
+    const sw = Number(w) || 0;
+    const sh = Number(h) || 0;
+    const long = Math.max(sw, sh);
+    if (long <= limit) return { w: sw, h: sh };
+    const k = limit / long;
+    return { w: Math.max(1, Math.round(sw * k)), h: Math.max(1, Math.round(sh * k)) };
+  }
+
+  /** data URL → base64 正文（去掉前缀）；顺便把 mime 取出来 */
+  function parseDataUrl(dataUrl) {
+    const s = String(dataUrl || '');
+    const m = s.match(/^data:([^;,]*)(;base64)?,(.*)$/s);
+    if (!m) return { mime: '', base64: s, isBase64: false };
+    return {
+      mime: m[1] || '',
+      base64: m[3] || '',
+      isBase64: !!m[2],
+    };
+  }
+
+  // ────────────────────────── 识图 ──────────────────────────
+
+  /**
+   * 识图请求体。tea_a2 里唯一吃图片的是 POST /api/chat（agent loop）：
+   *   images[] 里的 data 是 base64（不带 data: 前缀），最多 4 张、单张 8 MB。
+   * tools 传一个不存在的名字 = 一个工具都不给 —— 空数组会被当成「全部工具」。
+   */
+  function buildVisionBody(opts) {
+    const o = opts || {};
+    const s = normalizeSettings(o.settings);
+    const body = {
+      workspace_id: String(o.workspaceId || s.visionWorkspace || ''),
+      message: String(o.prompt || s.visionPrompt || ''),
+      images: [{ data: String(o.imageBase64 || '') }],
+      provider: String(o.provider || s.visionProvider || '').trim() || s.provider,
+      model: String(o.model || s.visionModel || '').trim() || s.model,
+      system_prompt: String(o.systemPrompt || s.visionSystemPrompt || ''),
+      tools: ['__tea_select_no_tools__'],
+      async: true,
+    };
+    if (s.visionReasoning && s.visionReasoning !== 'auto') body.reasoning_effort = s.visionReasoning;
+    return body;
+  }
+
+  /** 从 tea_a2 的工作区列表里挑一个能用的 */
+  function pickWorkspaceId(list) {
+    const arr = Array.isArray(list) ? list : (list && Array.isArray(list.workspaces) ? list.workspaces : []);
+    const usable = arr.filter((w) => w && w.id && w.exists !== false && w.writable !== false);
+    if (usable.length) return usable[0].id;
+    const any = arr.find((w) => w && w.id);
+    return any ? any.id : '';
+  }
+
+
+  // ────────────────────────── 快捷键 ──────────────────────────
+
+  /** 'Alt+Shift+A' → {alt:true, shift:true, key:'a'} */
+  function parseChord(text) {
+    const parts = String(text == null ? '' : text)
+      .split('+')
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const out = { alt: false, ctrl: false, shift: false, meta: false, key: '' };
+    for (const p of parts) {
+      const low = p.toLowerCase();
+      if (low === 'alt' || low === 'option') out.alt = true;
+      else if (low === 'ctrl' || low === 'control') out.ctrl = true;
+      else if (low === 'shift') out.shift = true;
+      else if (low === 'meta' || low === 'cmd' || low === 'command' || low === 'super') out.meta = true;
+      else out.key = low;
+    }
+    return out;
+  }
+
+  /** 键盘事件是不是这个快捷键 */
+  function matchChord(chord, ev) {
+    const c = typeof chord === 'string' ? parseChord(chord) : chord || {};
+    if (!c.key) return false;
+    const e = ev || {};
+    if (!!c.alt !== !!e.altKey) return false;
+    if (!!c.ctrl !== !!e.ctrlKey) return false;
+    if (!!c.shift !== !!e.shiftKey) return false;
+    if (!!c.meta !== !!e.metaKey) return false;
+    return String(e.key || '').toLowerCase() === c.key;
+  }
+
   // ────────────────────────── 导出 ──────────────────────────
 
   const api = {
@@ -426,6 +623,16 @@
     buildSearchBody,
     hasSearchArtifact,
     cleanSearchArtifacts,
+    normalizeRect,
+    clampRect,
+    computeCaptureScale,
+    cropRectToPixels,
+    fitSide,
+    parseDataUrl,
+    buildVisionBody,
+    pickWorkspaceId,
+    parseChord,
+    matchChord,
   };
 
   root.TeaCore = api;

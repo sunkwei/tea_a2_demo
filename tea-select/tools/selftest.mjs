@@ -197,5 +197,71 @@ eq('实体解码', Core.decodeEntities('a&lt; b&#39;c&quot;d&nbsp;e'), "a< b'c\"
 eq('去标签', Core.stripTags('<b>粗体</b> <i>斜体</i>'), '粗体 斜体');
 eq('超长截断', Core.clampText('abcdefghij', 4), 'abcd');
 
+
+console.log('\n[7] 划图（区域选择）');
+eq('两个点归一化成矩形', JSON.stringify(Core.normalizeRect({ x: 100, y: 20 }, { x: 40, y: 80 })), JSON.stringify({ x: 40, y: 20, w: 60, h: 60 }));
+eq('同一个点得到零面积', Core.normalizeRect({ x: 5, y: 5 }, { x: 5, y: 5 }).w, 0);
+
+const clamped = Core.clampRect({ x: -10, y: 10, w: 100, h: 50 }, 200, 200);
+eq('越界的左边被裁掉', clamped.x, 0);
+eq('越界的左边宽度跟着减', clamped.w, 90);
+eq('右边界不出画', Core.clampRect({ x: 150, y: 0, w: 100, h: 10 }, 200, 200).w, 50);
+eq('下边界不出画', Core.clampRect({ x: 0, y: 190, w: 10, h: 100 }, 200, 200).h, 10);
+
+// Firefox 抓回来的图：视口宽高一致才算对得上
+const scaleHi = Core.computeCaptureScale(1920, 1080, { w: 960, h: 540, cw: 945, ch: 540 }, 2);
+eq('2 倍屏缩放 = 2', scaleHi.sx, 2);
+const scaleLo = Core.computeCaptureScale(960, 540, { w: 960, h: 540, cw: 945, ch: 540 }, 1);
+eq('1 倍屏缩放 = 1', scaleLo.sx, 1);
+// 图里含滚动条（宽 960 高 540，但视口高 528）→ 只有 clientHeight 那组自洽
+const scaleScroll = Core.computeCaptureScale(960, 528, { w: 960, h: 540, cw: 945, ch: 528 }, 1);
+eq('含滚动条时按 clientHeight 换算', scaleScroll.sy, 1);
+ok('缩放不会离谱', scaleScroll.sx > 0.9 && scaleScroll.sx < 1.1);
+
+const px = Core.cropRectToPixels({ x: 100, y: 50, w: 200, h: 100 }, { sx: 2, sy: 2 }, 1920, 1080);
+eq('选区换算成像素 x', px.x, 200);
+eq('选区换算成像素 y', px.y, 100);
+eq('选区换算成像素宽', px.w, 400);
+eq('选区换算成像素高', px.h, 200);
+const pxOut = Core.cropRectToPixels({ x: 900, y: 500, w: 300, h: 200 }, { sx: 2, sy: 2 }, 1920, 1080);
+eq('超出图片的部分被裁掉', pxOut.w, 120);
+eq('超出图片的下边被裁掉', pxOut.h, 80);
+
+eq('小于上限不缩放', JSON.stringify(Core.fitSide(800, 600, 1600)), JSON.stringify({ w: 800, h: 600 }));
+eq('超过上限等比缩小', JSON.stringify(Core.fitSide(3200, 1600, 1600)), JSON.stringify({ w: 1600, h: 800 }));
+
+const du = Core.parseDataUrl('data:image/png;base64,AAAA');
+eq('data URL 取出 mime', du.mime, 'image/png');
+eq('data URL 取出 base64', du.base64, 'AAAA');
+eq('认得是 base64', du.isBase64, true);
+
+console.log('\n[8] 识图请求');
+const visionSettings = Core.normalizeSettings({
+  visionProvider: 'deepseek',
+  visionModel: 'deepseek-flash',
+  visionWorkspace: 'ws_test',
+  visionPrompt: '这是什么？',
+});
+const vbody = Core.buildVisionBody({ settings: visionSettings, imageBase64: 'AAAA' });
+eq('用识图的提供商', vbody.provider, 'deepseek');
+eq('用识图的模型', vbody.model, 'deepseek-flash');
+eq('用指定的工作区', vbody.workspace_id, 'ws_test');
+eq('提示词从设置来', vbody.message, '这是什么？');
+eq('图片作为附件传上去', vbody.images[0].data, 'AAAA');
+eq('图片只有一张', vbody.images.length, 1);
+eq('不传 session_id（每次识图是一次独立问答）', vbody.session_id, undefined);
+ok('不给模型任何工具', Array.isArray(vbody.tools) && vbody.tools.length === 1);
+ok('工具名不是真的工具', vbody.tools[0] === '__tea_select_no_tools__');
+eq('异步提交，拿到回合句柄', vbody.async, true);
+eq('识图默认不思考', vbody.reasoning_effort, 'none');
+const vbody2 = Core.buildVisionBody({ settings: Core.normalizeSettings({ visionReasoning: 'auto' }), imageBase64: 'x' });
+eq('auto 不发送思考强度', vbody2.reasoning_effort, undefined);
+eq('留空用默认提供商', Core.buildVisionBody({ settings: Core.normalizeSettings({}), imageBase64: 'x' }).provider, 'deepseek');
+
+eq('自动挑一个能写的工作区', Core.pickWorkspaceId({ workspaces: [{ id: 'ws_a', writable: false }, { id: 'ws_b', writable: true }] }), 'ws_b');
+eq('没有能写的就退而求其次', Core.pickWorkspaceId({ workspaces: [{ id: 'ws_a', writable: false }] }), 'ws_a');
+eq('空列表没有工作区', Core.pickWorkspaceId({ workspaces: [] }), '');
+eq('识图任务在任务表里', Core.TASKS.vision.name, '识图');
+
 console.log('\n结果：' + passed + ' 通过，' + failed + ' 失败');
 process.exit(failed ? 1 : 0);

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "tea_a2 划词助手",
-  "version": "0.1.0",
-  "description": "划词后在鼠标位置弹出横幅：翻译 / 搜索 / 总结，调用本机 tea_a2 的 /api/llm/chat。",
+  "version": "0.2.0",
+  "description": "划词后弹出横幅：翻译 / 搜索 / 总结；划图（Alt+Shift+A）后识图。调用本机 tea_a2。",
   "browser_specific_settings": {
     "gecko": {
       "id": "tea-select@tea-a2.local",
@@ -19,6 +19,7 @@
     "tabs"
   ],
   "host_permissions": [
+    "<all_urls>",
     "http://localhost:8282/*",
     "http://127.0.0.1:8282/*",
     "https://www.bing.com/*",
@@ -66,6 +67,12 @@
         "default": "Alt+Shift+T"
       },
       "description": "打开 tea_a2 划词助手的设置页"
+    },
+    "region-select": {
+      "suggested_key": {
+        "default": "Alt+Shift+A"
+      },
+      "description": "划图：拖出一个区域，交给 tea_a2 识别"
     }
   }
 }

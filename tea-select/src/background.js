@@ -182,6 +182,220 @@
     };
   }
 
+
+  // ────────────────────────── 划图：抓图 + 识图 ──────────────────────────
+
+  function dataUrlToBytes(dataUrl) {
+    const parsed = Core.parseDataUrl(dataUrl);
+    const bin = atob(parsed.base64 || '');
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+
+  function bytesToBase64(bytes) {
+    let out = '';
+    const chunk = 0x8000; // 分块转，避免 apply 的参数上限
+    for (let i = 0; i < bytes.length; i += chunk) {
+      out += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(out);
+  }
+
+  async function blobToBase64(blob) {
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    return { base64: bytesToBase64(buf), mime: blob.type || 'image/png' };
+  }
+
+  function newCanvas(w, h) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(w));
+    canvas.height = Math.max(1, Math.round(h));
+    return canvas;
+  }
+
+  /** 把位图的一块画到画布上，返回 data URL */
+  function drawCrop(bmp, px, dw, dh) {
+    const canvas = newCanvas(dw, dh);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bmp, px.x, px.y, px.w, px.h, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png');
+  }
+
+  /** 抓当前标签页的可视区域 */
+  async function captureVisibleBitmap(windowId, tabId) {
+    // captureVisibleTab 抓的是「当前活动标签页」，不是我们发消息的那个：
+    // 万一用户中途切走了，先把它切回来，否则会截到别的页面。
+    if (tabId) {
+      try {
+        const tab = await ext.tabs.get(tabId);
+        if (!tab.active) {
+          await ext.tabs.update(tabId, { active: true });
+          await new Promise((r) => setTimeout(r, 250));
+        }
+      } catch (e) {
+        /* 标签页没了就算了 */
+      }
+    }
+    const dataUrl = await ext.tabs.captureVisibleTab(windowId, { format: 'png' });
+    const bytes = dataUrlToBytes(dataUrl);
+    const blob = new Blob([bytes], { type: 'image/png' });
+    return createImageBitmap(blob);
+  }
+
+  /** 把一张网络图片取下来（后台有 host 权限，跨域也能取） */
+  async function fetchImageAsDataUrl(url) {
+    const s = String(url || '');
+    if (!s) return '';
+    if (s.startsWith('data:')) return s;
+    const res = await fetch(s, { credentials: 'omit' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const { base64, mime } = await blobToBase64(blob);
+    return 'data:' + (mime || 'image/png') + ';base64,' + base64;
+  }
+
+  /** 选区 → 图片（base64 + 一张小预览） */
+  async function grabRegionImage(msg, settings) {
+    const s = Core.normalizeSettings(settings);
+    const maxSide = Number(s.visionMaxSide) || 1600;
+
+    // 1) 选区正好是一张 <img>：直接用原图。比截图清晰，也不受滚动条换算的影响。
+    if (msg && msg.imgSrc) {
+      try {
+        const dataUrl = await fetchImageAsDataUrl(msg.imgSrc);
+        if (dataUrl) {
+          const parsed = Core.parseDataUrl(dataUrl);
+          const bmp = await createImageBitmap(
+            new Blob([dataUrlToBytes(dataUrl)], { type: parsed.mime || 'image/png' })
+          );
+          const fit = Core.fitSide(bmp.width, bmp.height, maxSide);
+          const preview = drawCrop(bmp, { x: 0, y: 0, w: bmp.width, h: bmp.height },
+            Core.fitSide(bmp.width, bmp.height, 480).w, Core.fitSide(bmp.width, bmp.height, 480).h);
+          return {
+            base64: parsed.base64,
+            mime: parsed.mime || 'image/png',
+            w: fit.w,
+            h: fit.h,
+            preview,
+            source: '原图',
+            cropW: bmp.width,
+            cropH: bmp.height,
+          };
+        }
+      } catch (e) {
+        /* 原图拿不到就退回截图 */
+      }
+    }
+
+    // 2) 抓可视区域，按比例裁出选区
+    const bmp = await captureVisibleBitmap(msg.windowId, msg.tabId);
+    const scale = Core.computeCaptureScale(bmp.width, bmp.height, msg.view || {}, msg.dpr);
+    const px = Core.cropRectToPixels(msg.rect, scale, bmp.width, bmp.height);
+    const fit = Core.fitSide(px.w, px.h, maxSide);
+    const dataUrl = drawCrop(bmp, px, fit.w, fit.h);
+    const parsed = Core.parseDataUrl(dataUrl);
+    const prev = Core.fitSide(px.w, px.h, 480);
+    const preview = drawCrop(bmp, px, prev.w, prev.h);
+    return {
+      base64: parsed.base64,
+      mime: 'image/png',
+      w: fit.w,
+      h: fit.h,
+      preview,
+      source: '截图',
+      cropW: px.w,
+      cropH: px.h,
+    };
+  }
+
+  /** tea_a2 上自动挑一个工作区 */
+  async function autoWorkspaceId(settings) {
+    const s = Core.normalizeSettings(settings);
+    const res = await fetch(s.apiBase + '/api/workspaces');
+    const data = await res.json().catch(() => null);
+    const id = Core.pickWorkspaceId(data);
+    if (!id) throw new Error('tea_a2 上没有可用的工作区（GET /api/workspaces 是空的）');
+    return id;
+  }
+
+  /** 轮询回合状态直到结束 */
+  async function pollTurn(apiBase, turnId, timeoutMs) {
+    const deadline = Date.now() + (timeoutMs || 180000);
+    while (Date.now() < deadline) {
+      const res = await fetch(apiBase + '/api/turns/' + encodeURIComponent(turnId));
+      const data = await res.json().catch(() => null);
+      if (!data) throw new Error('读回合状态失败');
+      if (data.state && data.state !== 'running') return data;
+      await new Promise((r) => setTimeout(r, 600));
+    }
+    throw new Error('识图超时（180 秒）');
+  }
+
+  /**
+   * 识图：tea_a2 里唯一吃图片的是 POST /api/chat（agent loop 那条路）。
+   * /api/llm/chat 只收字符串 content，收不了图片。
+   */
+  async function runVision(msg) {
+    const s = await getSettings();
+    const grab = {
+      base64: String((msg && msg.imageBase64) || ''),
+      mime: String((msg && msg.mime) || 'image/png'),
+      w: Number(msg && msg.imageW) || 0,
+      h: Number(msg && msg.imageH) || 0,
+      cropW: Number(msg && msg.cropW) || 0,
+      cropH: Number(msg && msg.cropH) || 0,
+      source: String((msg && msg.source) || '截图'),
+    };
+    if (!grab.base64) throw new Error('没有图片');
+    const workspaceId = s.visionWorkspace || (await autoWorkspaceId(s));
+    const body = Core.buildVisionBody({
+      settings: s,
+      workspaceId,
+      imageBase64: grab.base64,
+    });
+
+    const res = await fetch(s.apiBase + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    let data = null;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      /* 非 JSON */
+    }
+    if (!res.ok || !data || data.error) {
+      const err =
+        data && data.error ? data.error.message || data.error.code : text.slice(0, 300);
+      throw new Error('tea_a2 返回错误：' + err);
+    }
+    if (!data.turn_id) throw new Error('tea_a2 没有返回回合句柄');
+
+    const turn = await pollTurn(s.apiBase, data.turn_id);
+    if (turn.state !== 'done') {
+      throw new Error('识图没跑完（状态：' + (turn.state || '未知') + '）');
+    }
+    return {
+      ok: true,
+      task: 'vision',
+      content: turn.result || '',
+      preview: grab.preview,
+      image: {
+        w: grab.w,
+        h: grab.h,
+        cropW: grab.cropW,
+        cropH: grab.cropH,
+        source: grab.source,
+      },
+      elapsed_ms: turn.elapsed_ms,
+      provider: body.provider,
+      model: body.model,
+    };
+  }
+
   // ────────────────────────── 三个任务 ──────────────────────────
 
   async function runTask(task, text, settings) {
@@ -206,9 +420,51 @@
     };
   }
 
+  // ────────────────────────── 标签页 ──────────────────────────
+
+  // 设置页（工具栏弹出的就是它）不是网页，划图要落到「最近一个网页标签页」上。
+  let lastContentTabId = null;
+
+  function isContentTab(tab) {
+    return !!(tab && /^https?:/i.test(tab.url || ''));
+  }
+
+  if (ext.tabs && ext.tabs.onActivated) {
+    ext.tabs.onActivated.addListener(async (info) => {
+      try {
+        const tab = await ext.tabs.get(info.tabId);
+        if (isContentTab(tab)) lastContentTabId = tab.id;
+      } catch (e) {
+        /* 标签页没了就算了 */
+      }
+    });
+  }
+
+  if (ext.tabs && ext.tabs.onUpdated) {
+    ext.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+      if (!changeInfo.url && !changeInfo.status) return;
+      if (isContentTab(tab)) lastContentTabId = tabId;
+    });
+  }
+
+  async function findTargetTab(tabId) {
+    if (typeof tabId === 'number' && tabId >= 0) return tabId;
+    if (lastContentTabId !== null) {
+      try {
+        const tab = await ext.tabs.get(lastContentTabId);
+        if (isContentTab(tab)) return tab.id;
+      } catch (e) {
+        /* 落到下面的查询 */
+      }
+    }
+    const tabs = await ext.tabs.query({ active: true, currentWindow: true });
+    return tabs && tabs[0] ? tabs[0].id : null;
+  }
+
   // ────────────────────────── 消息路由 ──────────────────────────
 
-  async function handle(msg) {
+  async function handle(msg, sender) {
+    if (sender && sender.tab && msg && typeof msg === 'object') msg.tabId = sender.tab.id;
     switch (msg && msg.type) {
       case 'getSettings':
         return { ok: true, settings: await getSettings() };
@@ -236,6 +492,35 @@
         };
         const data = await chat(body, s);
         return { ok: true, content: data.content || '', providers: null };
+      }
+
+      case 'captureRegion': {
+        const s = await getSettings();
+        const grab = await grabRegionImage(msg, s);
+        return {
+          ok: true,
+          task: 'capture',
+          preview: grab.preview,
+          image: {
+            base64: grab.base64,
+            mime: grab.mime,
+            w: grab.w,
+            h: grab.h,
+            cropW: grab.cropW,
+            cropH: grab.cropH,
+            source: grab.source,
+          },
+        };
+      }
+
+      case 'runVision':
+        return runVision(msg);
+
+      case 'startRegionSelect': {
+        const tabId = await findTargetTab(msg.tabId);
+        if (tabId === null) return { ok: false, error: '找不到网页标签页' };
+        await ext.tabs.sendMessage(tabId, { type: 'startRegionSelect' });
+        return { ok: true, tabId };
       }
 
       case 'openOptions':
@@ -271,6 +556,16 @@
       if (command === 'open-options') {
         const url = ext.runtime.getURL('src/options.html');
         ext.tabs.create({ url });
+      } else if (command === 'region-select') {
+        // 划图：让当前标签页的内容脚本进入「选区」模式
+        ext.tabs
+          .query({ active: true, currentWindow: true })
+          .then((tabs) => {
+            const tab = tabs && tabs[0];
+            if (!tab) return;
+            return ext.tabs.sendMessage(tab.id, { type: 'startRegionSelect' }).catch(() => {});
+          })
+          .catch(() => {});
       }
     });
   }

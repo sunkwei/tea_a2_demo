@@ -19,14 +19,20 @@
     'summarizeProvider',
     'summarizeModel',
     'searchUrlTemplate',
+    'visionProvider',
+    'visionModel',
+    'visionWorkspace',
+    'visionPrompt',
+    'regionKey',
   ];
-  const NUMBER_FIELDS = ['minChars', 'maxTextChars'];
+  const NUMBER_FIELDS = ['minChars', 'maxTextChars', 'visionMaxSide'];
   const SELECT_FIELDS = [
     'translateReasoning',
     'searchReasoning',
     'summarizeReasoning',
     'searchEngine',
     'searchMode',
+    'visionReasoning',
   ];
   const CHECK_FIELDS = ['searchAiSummary', 'showReasoning'];
 
@@ -96,7 +102,7 @@
   }
 
   function initSelects() {
-    for (const id of ['translateReasoning', 'searchReasoning', 'summarizeReasoning']) {
+    for (const id of ['translateReasoning', 'searchReasoning', 'summarizeReasoning', 'visionReasoning']) {
       const sel = $(id);
       sel.innerHTML = '';
       for (const level of Core.REASONING_LEVELS) {
@@ -182,6 +188,16 @@
 
     $('btnProviders').addEventListener('click', loadProviders);
     $('btnTest').addEventListener('click', testConnection);
+    $('btnRegion').addEventListener('click', async () => {
+      setStatus('正在划图…');
+      try {
+        const res = await send({ type: 'startRegionSelect' });
+        if (!res || !res.ok) throw new Error((res && res.error) || '启动失败');
+        setStatus('已切换到网页标签页，拖出一个区域', 'ok');
+      } catch (e) {
+        setStatus('启动失败：' + e.message, 'bad');
+      }
+    });
     $('btnReset').addEventListener('click', () => {
       settings = Core.normalizeSettings(null);
       fill();
