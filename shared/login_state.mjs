@@ -14,10 +14,12 @@
 //
 // 说明：
 //   * 必须用**干净的 context**：已登录的 context 打开登录页会直接跳走，根本没有二维码。
-//   * playwright-core 不带浏览器，得自己指路：CHROME_BIN，或脚本里自动找
+//   * playwright-core 不带浏览器，脚本自己找（也可以用 CHROME_BIN 指定）：
+//     CHROME_BIN > playwright 自己下的 >
 //     Windows: %LOCALAPPDATA%\ms-playwright\chromium-*\chrome-win64\chrome.exe
 //     macOS:   ~/Library/Caches/ms-playwright/chromium-*/chrome-mac*/Chromium.app/...
 //     Linux:   ~/.cache/ms-playwright/chromium-*/chrome-linux64/chrome
+//     其它：    系统装的 google-chrome / chromium / edge（/usr/bin/… 和 PATH）
 //   * playwright-core 从这些地方找：PLAYWRIGHT_CORE_PATH 环境变量 → NODE_PATH →
 //     当前目录/脚本同级的 node_modules。找不到就提示 `npm i playwright-core`。
 import { createRequire } from 'node:module';
@@ -66,8 +68,25 @@ function loadPlaywright() {
 }
 
 // ---- 找浏览器 ------------------------------------------------------------
+// 顺序：CHROME_BIN > playwright 自己下的（ms-playwright）> 系统装的常见路径 > PATH 里找。
+function isFile(p) {
+  try { return fs.existsSync(p) && fs.statSync(p).isFile(); } catch (e) { return false; }
+}
+
+function findOnPath(names) {
+  const dirs = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  for (const name of names) {
+    for (const dir of dirs) {
+      const full = path.join(dir, name);
+      if (isFile(full)) return full;
+    }
+  }
+  return null;
+}
+
 function findChrome() {
-  if (process.env.CHROME_BIN && fs.existsSync(process.env.CHROME_BIN)) return process.env.CHROME_BIN;
+  if (process.env.CHROME_BIN && isFile(process.env.CHROME_BIN)) return process.env.CHROME_BIN;
+
   const roots = [];
   if (process.env.LOCALAPPDATA) roots.push(path.join(process.env.LOCALAPPDATA, 'ms-playwright'));
   roots.push(path.join(os.homedir(), 'AppData', 'Local', 'ms-playwright'));
@@ -83,35 +102,71 @@ function findChrome() {
     for (const d of fs.readdirSync(root)) {
       for (const p of pats) {
         const full = path.join(root, d, p);
-        if (fs.existsSync(full)) return full;
+        if (isFile(full)) return full;
       }
     }
   }
-  return null;      // 交给 playwright 自己找
+
+  // 系统装的 Chrome / Chromium / Edge（发行版装法太多，干脆多试几个常见位置）
+  const wellknown = [
+    '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium', '/usr/bin/chromium-browser',
+    '/snap/bin/chromium', '/opt/google/chrome/chrome',
+    '/usr/bin/microsoft-edge', '/usr/bin/microsoft-edge-stable',
+    '/usr/bin/brave-browser',
+  ];
+  for (const p of wellknown) if (isFile(p)) return p;
+
+  // 最后翻 PATH
+  return findOnPath([
+    'google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser',
+    'microsoft-edge', 'brave-browser',
+  ]);
 }
 
 const { chromium } = loadPlaywright();
 const exe = findChrome();
-console.log(`[login:${LABEL}] 浏览器: ${exe || '(让 playwright 自己找)'}`);
+console.log(`[login:${LABEL}] 浏览器: ${exe || '(没找到，见下面的提示)'}`);
 console.log(`[login:${LABEL}] 登录页: ${URL_}`);
+
+function launchOpts(headless) {
+  return {
+    executablePath: exe || undefined,
+    headless,
+    args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  };
+}
+
+function noBrowser(e) {
+  const first = String((e && e.message) || e).split('\n')[0];
+  console.error(`[login] 浏览器起不来：${first}`);
+  if (!exe) {
+    console.error('[login] 没找到可用的浏览器。任选一种：');
+    console.error('  1) 用系统装的 Chrome/Chromium：');
+    console.error('     CHROME_BIN=/usr/bin/google-chrome python3 bilibili/bili.py --login');
+    console.error('  2) 让 playwright 自己装一份：');
+    console.error('     npx playwright install chromium');
+  } else {
+    console.error(`[login] 用的就是 ${exe}，还是起不来的话检查下它能不能单独跑。`);
+  }
+  process.exit(1);
+}
 
 let browser;
 try {
-  browser = await chromium.launch({
-    executablePath: exe || undefined,
-    headless: HEADLESS,
-    args: ['--no-sandbox', '--disable-dev-shm-usage'],
-  });
+  browser = await chromium.launch(launchOpts(HEADLESS));
 } catch (e) {
   if (!HEADLESS) {
     console.log('[login] 有头模式起不来（多半是没有图形界面 / DISPLAY 没设），退回无头 + 扫码。');
     console.log('[login] ' + String(e.message).split('\n').slice(0, 4).join(' '));
-    browser = await chromium.launch({
-      executablePath: exe || undefined,
-      headless: true,
-      args: ['--no-sandbox', '--disable-dev-shm-usage'],
-    });
-  } else throw e;
+    try {
+      browser = await chromium.launch(launchOpts(true));
+    } catch (e2) {
+      noBrowser(e2);
+    }
+  } else {
+    noBrowser(e);
+  }
 }
 
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'zh-CN' });

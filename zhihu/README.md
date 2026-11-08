@@ -78,7 +78,7 @@ python zhihu.py post llm --yes              # 真投递到知乎专栏
 | 语料 | `~/.tea_agent/zhihu/corpus.json` | `ZHIHU_HOME` 改根目录 |
 | 摘要 | `~/.tea_agent/zhihu/summaries.json` | 同上 |
 | digest / 文稿 | `~/.tea_agent/zhihu/digest.md`、`draft.md` | 同上 |
-| 登录态 | `~/.tea_agent/zhihu_state.json` / `~/Documents/pw_zhihu.json` | `ZHIHU_STATE` |
+| 登录态 | `~/.tea_agent/zhihu_state.json`（本机写入）/ `~/Documents/pw_zhihu.json`（Windows） | `ZHIHU_STATE` / `--state` |
 | provider 配置 | `~/.tea_agent/provider.yaml`（**和 tea_a2 共用一份**） | — |
 
 ---
@@ -88,7 +88,19 @@ python zhihu.py post llm --yes              # 真投递到知乎专栏
 开一个**有头浏览器**停在知乎登录页，你登录完**把窗口关掉**就行，storageState 会被写下来
 （`z_c0` cookie 在不在 = 成功判据）。没有图形界面时自动退回无头 + 截二维码（`--headless` 强制）。
 
-需要 Node.js 和 `playwright-core`（Windows 上第一次会自动装到 `%LOCALAPPDATA%\Temp\tea_playwright`）。
+- **写一律写本机**：Linux/macOS 写 `~/.tea_agent/zhihu_state.json`，
+  Windows 写 `~/Documents/pw_zhihu.json`；目录没有就现建（权限 700）。
+  **不会**往 `/mnt/c/...` 那种「别系统挂载盘」里写（那是 Windows 侧的文件，
+  在 Linux 上写它要过 9p/drvfs，又慢又容易失败）。
+- **读**按这个顺序找：`$ZHIHU_STATE` → `--state` → `~/.tea_agent/zhihu_state.json` →
+  `~/Documents/pw_zhihu.json` → `/mnt/c/Users/Hetin/Documents/pw_zhihu.json`
+  （挂载盘那份只当**兜底读**）。
+- 想自己挑地方：`python zhihu.py --login --state /path/to/state.json`。
+
+需要 Node.js 和 `playwright-core`（Windows 上第一次会自动装到 `%LOCALAPPDATA%\Temp\tea_playwright`；
+Linux 上 `npm i playwright-core`）。**浏览器不用自己指**：脚本会依次找 `CHROME_BIN` →
+playwright 自己下的 chromium → 系统装的 google-chrome / chromium / edge（含 PATH）；
+都找不到就照提示来：`CHROME_BIN=/usr/bin/google-chrome` 或 `npx playwright install chromium`。
 
 ---
 

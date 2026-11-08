@@ -8,7 +8,8 @@ r"""登录入口：开一个有头浏览器让你登录，登录完把 storageSt
     python3 bilibili/bili.py  --login
 
 流程：
-  1) 找到 state 文件该写哪（环境变量 > 已存在的候选 > 默认路径）
+  1) 找到 state 文件该写哪（环境变量 > 已存在的**本机**候选 > 默认路径；
+     /mnt/c 那种挂载盘只读不写）
   2) 调 node shared/login_state.mjs 开浏览器（headless=False）
   3) 你在窗口里登录 → 关掉窗口 → 它把 storageState 写下来
   4) 回读文件确认 cookie 在，并打印有效期
@@ -18,6 +19,7 @@ r"""登录入口：开一个有头浏览器让你登录，登录完把 storageSt
 """
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -27,13 +29,41 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 HELPER = os.path.join(HERE, "login_state.mjs")
 
 
-def state_path(env_var, candidates, default):
-    """登录态写哪：环境变量 > 已存在的候选文件 > 默认路径。"""
+# 别的系统的盘挂在本机上：WSL 的 /mnt/c、Cygwin 的 /cygdrive/c、SMB 共享……
+# 这些路径只适合**读**（拿 Windows 侧导出的那份登录态），不适合**写**：
+# 往里写要过 9p/drvfs，慢、权限怪，共享目录一坏两边都受影响。
+# 所以 --login 一律写本机自己的目录（~/.tea_agent/…）。
+REMOTE_PATH_RE = re.compile(
+    r"^(/mnt/[a-zA-Z](/|$)"      # WSL 挂载的 Windows 盘
+    r"|/cygdrive/[a-zA-Z](/|$)"  # Cygwin 的盘
+    r"|/net/"                   # smbfs 挂载
+    r"|[a-zA-Z]:[\\/]"         # Windows 原生路径
+    r"|\\\\)"                 # UNC 共享
+)
+
+
+def is_remote_path(path):
+    """这个路径是不是落在「别的系统的盘」上（WSL 的 /mnt/c 之类）。"""
+    if not path:
+        return False
+    p = os.path.expanduser(path)
+    return bool(REMOTE_PATH_RE.match(p))
+
+
+def state_path(env_var, candidates, default, allow_remote=False):
+    """登录态**写**哪：环境变量 > 已存在的**本机**候选 > 默认路径。
+
+    allow_remote=False（默认）时，挂载进来的别系统盘（/mnt/c/…）不会被选中
+    当写入目标——它只作为读取时的兜底。用户显式设了 BILI_STATE/ZHIHU_STATE
+    的除外：那是明确指定，写哪儿都行。
+    """
     env = os.environ.get(env_var)
     if env:
         return env
     for c in candidates:
-        if c and os.path.exists(c):
+        if not c or not os.path.exists(c):
+            continue
+        if allow_remote or not is_remote_path(c):
             return c
     return default
 
@@ -105,9 +135,18 @@ def login(url, out, cookie, label, headless=False, timeout=600, quiet=False):
         helper = os.path.join(tmp, "login_state.mjs")
         shutil.copyfile(HELPER, helper)
 
+    # 本机建目录（~/.tea_agent/ 这种），别往别系统的挂载盘里塞
     out_dir = os.path.dirname(os.path.abspath(out))
-    if out_dir and not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+    if out_dir and not os.path.isdir(out_dir):
+        try:
+            os.makedirs(out_dir, exist_ok=True)
+        except OSError as exc:
+            raise SystemExit("建目录失败 %s：%s\n"
+                             "（换个路径：BILI_STATE=/path/to/state.json）" % (out_dir, exc))
+        try:
+            os.chmod(out_dir, 0o700)      # 里面是明文 cookie，收紧一点
+        except OSError:
+            pass
 
     cmd = [node, helper, "--url", url, "--out", out, "--cookie", cookie,
            "--label", label, "--timeout", str(timeout)]

@@ -16,8 +16,11 @@ r"""知乎登录态 → 内容抓取 → LLM 摘要 → markdown digest。
     python3 zhihu/zhihu.py all --collection 737068447   # 一条龙
 
 登录态来自一个 Playwright storageState 文件（cookie 明文，跨 OS 通用）：
-  $ZHIHU_STATE  >  ~/.tea_agent/zhihu_state.json  >  /mnt/c/Users/Hetin/Documents/pw_zhihu.json
-  （--login 会把新状态写到第一个已存在的候选里；Windows 上默认写 %USERPROFILE%\Documents）
+  写：--login 一律写**本机**（Linux/macOS: ~/.tea_agent/zhihu_state.json，
+      Windows: %USERPROFILE%\Documents\pw_zhihu.json），不往 /mnt/c 那种
+      别系统挂载盘里写。
+  读：$ZHIHU_STATE > ~/.tea_agent/zhihu_state.json > ~/Documents/pw_zhihu.json
+      > /mnt/c/Users/Hetin/Documents/pw_zhihu.json（挂载盘只当兜底读）。
 
 知乎接口现状（2026-10 实测，别照着老博客改）：
   * 能用（带 cookie 就行，不需要签名）：
@@ -74,18 +77,26 @@ CORPUS = os.path.join(STATE_DIR, "corpus.json")
 SUMMARIES = os.path.join(STATE_DIR, "summaries.json")
 DIGEST = os.path.join(STATE_DIR, "digest.md")
 
-# 登录态可能在哪：环境变量 > 本机 ~ 下的副本 > WSL 里共用的 Windows 那份 > Windows 原生位置
+# 登录态：**写**永远写本机，**读**可以顺带认一下别系统挂载盘上导出的那份。
+#
+#   写：--login 在本机建目录、写文件（Linux/macOS: ~/.tea_agent/zhihu_state.json，
+#       Windows: ~/Documents/pw_zhihu.json）。
+#   读：按下面顺序找，找到第一个就用；/mnt/c 那种挂载盘排在最后，只当兜底。
 WIN_DOCS = os.path.join(HOME, "Documents")
+LOCAL_STATE = os.path.join(HOME, ".tea_agent", "zhihu_state.json")
 STATE_CANDIDATES = [
     os.environ.get("ZHIHU_STATE", ""),
-    os.path.join(HOME, ".tea_agent", "zhihu_state.json"),
-    "/mnt/c/Users/Hetin/Documents/pw_zhihu.json",
+    LOCAL_STATE,
     os.path.join(WIN_DOCS, "pw_zhihu.json"),
+    "/mnt/c/Users/Hetin/Documents/pw_zhihu.json",
 ]
 if os.name == "nt":
     STATE_DEFAULT = os.path.join(WIN_DOCS, "pw_zhihu.json")
 else:
-    STATE_DEFAULT = "/mnt/c/Users/Hetin/Documents/pw_zhihu.json"
+    STATE_DEFAULT = LOCAL_STATE
+
+# 命令行 --state 指定的登录态文件（有它就优先用它）
+STATE_OVERRIDE = ""
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
@@ -98,7 +109,8 @@ TOKEN = os.environ.get("ZHIHU_TOKEN", "")
 # 登录态
 # --------------------------------------------------------------------------
 def load_cookies():
-    for path in STATE_CANDIDATES:
+    candidates = ([STATE_OVERRIDE] if STATE_OVERRIDE else []) + STATE_CANDIDATES
+    for path in candidates:
         if path and os.path.exists(path):
             with open(path, "r", encoding="utf-8") as fh:
                 st = json.load(fh)
@@ -106,8 +118,10 @@ def load_cookies():
                    if c["domain"].endswith("zhihu.com")]
             print("[zhihu] 登录态: %s (%d 个 cookie)" % (path, len(jar)))
             return jar
-    raise SystemExit("找不到登录态文件。放到 %s，或用 ZHIHU_STATE=/path 指定。"
-                     % STATE_CANDIDATES[-1])
+    raise SystemExit("找不到登录态文件。先跑 `python zhihu.py --login` 登录一次"
+                     "（登录态会写到本机 %s），"
+                     "或用 --state /path/to/state.json（或 ZHIHU_STATE=…）指定。"
+                     % STATE_DEFAULT)
 
 
 def make_session():
@@ -1294,8 +1308,11 @@ def cmd_login(args):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import browser_login
 
-    out = browser_login.state_path("ZHIHU_STATE", STATE_CANDIDATES,
-                                    STATE_DEFAULT)
+    out = args.state or browser_login.state_path("ZHIHU_STATE", STATE_CANDIDATES,
+                                                 STATE_DEFAULT)
+    if browser_login.is_remote_path(out):
+        print("[zhihu] 提示：目标是挂载盘上的路径（%s），写入慢且容易失败；"
+              "要写本机就加 --state %s" % (out, LOCAL_STATE))
     ok, msg = browser_login.login(
         url="https://www.zhihu.com/signin",
         out=out, cookie="z_c0", label="zhihu",
@@ -1317,12 +1334,15 @@ def cmd_login(args):
 
 
 def main():
+    global STATE_OVERRIDE
     ap = argparse.ArgumentParser(description="知乎内容抓取 + LLM 提炼")
     ap.add_argument("--login", action="store_true",
                     help="登录入口：开有头浏览器登录，把 storageState 存下来")
     ap.add_argument("--headless", action="store_true",
                     help="配合 --login：不开窗口，改成扫码")
     ap.add_argument("--timeout", type=int, default=600, help="--login 最多等多久（秒）")
+    ap.add_argument("--state", default=None,
+                    help="登录态文件放哪（--login 写这儿，抓取时也从这儿读）")
     sub = ap.add_subparsers(dest="cmd")
 
     sub.add_parser("whoami", help="账号信息").set_defaults(func=cmd_whoami)
@@ -1402,6 +1422,7 @@ def main():
     p.set_defaults(func=cmd_post)
 
     args = ap.parse_args()
+    STATE_OVERRIDE = args.state or ""
     if args.login:
         cmd_login(args)
         return
