@@ -115,6 +115,66 @@ def llm_chat(p, model, messages, max_tokens=2000, temperature=0.2, tries=3):
     raise RuntimeError("LLM 调用失败: %s" % last)
 
 
+def _strip_fence(text):
+    text = (text or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
+        text = re.sub(r"\n?```$", "", text.strip())
+    return text
+
+
+def extract_json_loose(text):
+    """宽松版 JSON 抽取：输出被截断时也能救回能救的部分。
+
+    模型常常在半路被 max_tokens 截断（末尾少几个 ] } 或字符串没闭合）。
+    严格解析会失败；而 extract_json 会退而返回一个**内层**对象
+    （比如 picks 列表里的第一个条目），看起来像成功，其实是错的。
+    这里按顺序试：
+      1. 完整 JSON；
+      2. 从第一个 { 开始，把没闭合的引号/括号补回去再解析；
+      3. 都失败才退回严格的 extract_json。
+    """
+    text = _strip_fence(text)
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+
+    start = text.find("{")
+    if start >= 0:
+        body = text[start:]
+        stack, in_str, esc = [], False, False
+        for ch in body:
+            if in_str:
+                if esc:
+                    esc = False
+                elif ch == "\\":
+                    esc = True
+                elif ch == '"':
+                    in_str = False
+                continue
+            if ch == '"':
+                in_str = True
+            elif ch in "{[":
+                stack.append(ch)
+            elif ch in "}]":
+                if stack:
+                    stack.pop()
+        repaired = body
+        if esc:                       # 截断在转义符后面
+            repaired = repaired[:-1]
+        if in_str:                    # 字符串没闭合
+            repaired += '"'
+        repaired = re.sub(r",\s*$", "", repaired)   # 截断处常留个尾逗号
+        for opener in reversed(stack):
+            repaired += "}" if opener == "{" else "]"
+        try:
+            return json.loads(repaired)
+        except Exception:
+            pass
+    return extract_json(text)
+
+
 def extract_json(text):
     """从模型回复里抠出第一个完整的 JSON 对象。"""
     text = text.strip()

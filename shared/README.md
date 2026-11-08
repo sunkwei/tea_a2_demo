@@ -25,6 +25,10 @@ obj = extract_json(raw)                           # 模型偶尔会包一层 ```
   第一个 provider 是默认的；`models` 是字典时取第一个键当默认模型。
 - `extract_json` 不只是 `json.loads`：模型爱在 JSON 外面包 ```json … ```，
   还有时前面带一句「好的，以下是 JSON：」——这些都能抠出来。
+- `extract_json_loose` 是给**被截断**的回复用的：模型话说到一半被 `max_tokens` 砍掉时，
+  严格的 `extract_json` 会退而返回一个**内层**对象（比如 picks 列表里的第一条）——
+  看着像成功，其实是错的。`extract_json_loose` 会把缺的引号/括号补回去再解析。
+  bili/zhihu 两条线现在都走它。
 - `llm_chat` **不把思考过程当答案**：有些模型把 token 先花在思考上，正文是空的。
   这种情况当成失败重试（最多 3 次），而不是把 `reasoning_content` 返回给调用方。
 - 依赖：`requests` + `pyyaml`（没装时 import 不报错，用到才给一句清楚的提示）。
@@ -35,14 +39,21 @@ obj = extract_json(raw)                           # 模型偶尔会包一层 ```
 
 `--login` 的完整流程：
 
-1. 找到 state 文件该写哪（环境变量 > 已存在的候选 > 默认路径）；
+1. 找到 state 文件该写哪（环境变量 > 已存在的**本机**候选 > 默认路径）；
 2. 调 `node login_state.mjs` 开浏览器（`headless=false`）；
 3. 你在窗口里登录 → **把窗口关掉** → 它把 storageState 写下来；
 4. 回读文件确认关键 cookie 在，并打印有效期。
 
 - 浏览器必须是**干净的 context**：已登录的 context 打开登录页会直接跳走，根本没有二维码。
-- playwright-core 不带浏览器，得自己指路：`CHROME_BIN`，或让它去找
-  `%LOCALAPPDATA%\ms-playwright\chromium-*\chrome-win64\chrome.exe` 这类常见位置。
+- playwright-core 不带浏览器。`login_state.mjs` 会依次找：`CHROME_BIN` →
+  playwright 自己下的（`%LOCALAPPDATA%\ms-playwright\chromium-*\…`）→
+  系统装的 google-chrome / chromium / edge（`/usr/bin/google-chrome` 这类常见路径 + PATH）。
+  都找不到会给两条提示，而不是甩一堆 playwright 堆栈。
 - Windows 上第一次运行会自动 `npm i --prefix %LOCALAPPDATA%\Temp\tea_playwright playwright-core`。
 - Windows 上如果脚本在 WSL 的 UNC 路径里，node 处理 UNC 路径会出各种怪问题，
   所以先把助手脚本复制一份到 Windows 本地临时目录再跑。
+- **写只写本机**：`state_path()` 默认跳过「别系统的挂载盘」（`/mnt/c/…`、
+  `/cygdrive/c/…`、`C:\…`，靠 `is_remote_path()` 判断），那些路径只作**读**的兜底——
+  往挂载盘上写要过 9p/drvfs，又慢又容易失败。要往那儿写得显式指定：
+  `BILI_STATE=…` / `ZHIHU_STATE=…` 或 `--state …`。
+- 输出目录没有就现建，并 `chmod 700`（里面是明文 cookie）。
