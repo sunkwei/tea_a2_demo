@@ -1,0 +1,10 @@
+# 运行时依赖（video_analysis）
+# - requests：调 provider 的 vision / chat 接口
+# - pyyaml：读 ~/.tea_agent/provider.yaml（provider 配置）
+# - numpy：SenseVoice ASR 读 wav 音频（shared/sensevoice.py）
+# ffmpeg / ffprobe 不走 pip，装系统包（Windows: ffmpeg.org/download.html）
+# ASR 运行时（可选，缺了会自动装）：
+#   pip3 install --user --break-system-packages sherpa-onnx
+requests>=2.31
+PyYAML>=6.0
+numpy>=1.24

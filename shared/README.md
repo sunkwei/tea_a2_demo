@@ -8,6 +8,7 @@
 | `llm.py` | LLM 那一层：挑 provider、发起 chat、把回复里的 JSON 抠出来 | bilibili、zhihu |
 | `browser_login.py` | 登录入口的编排：找 node、装 playwright-core、开浏览器、验 cookie | bilibili、zhihu |
 | `login_state.mjs` | 浏览器那一半（Node + playwright）：停在登录页，等你登录完关窗口，把 storageState 存下来 | `browser_login.py` |
+| `sensevoice.py` | 本地语音识别（SenseVoice Small / ONNX int8 / sherpa-onnx），**完全离线** | bilibili、video_analysis |
 
 ---
 
@@ -57,3 +58,29 @@ obj = extract_json(raw)                           # 模型偶尔会包一层 ```
   往挂载盘上写要过 9p/drvfs，又慢又容易失败。要往那儿写得显式指定：
   `BILI_STATE=…` / `ZHIHU_STATE=…` 或 `--state …`。
 - 输出目录没有就现建，并 `chmod 700`（里面是明文 cookie）。
+
+---
+
+## sensevoice.py
+
+本地 ASR：**SenseVoice Small（ONNX int8）+ sherpa-onnx**，纯 CPU、不联网、不依赖 torch。
+模型约 158MB，放在 `~/models/sherpa-onnx/`（没有会自动下载）。
+
+```python
+from sensevoice import asr_status, extract_audio, asr_transcribe, asr_to_text
+
+ok, why = asr_status(auto=True)                  # 缺运行时/模型会自动装/下载
+wav  = extract_audio(media, "out.wav")           # 任意媒体 → 16k 单声道 wav
+pieces = asr_transcribe(wav, chunk=60)           # [(起始秒, 文本), ...]
+text = asr_to_text(pieces)                       # "[00:12] 你好" 那种逐字稿
+```
+
+- 速度约 **4 倍实时**（4 线程；57 分钟音频约 12 分钟跑完）。
+- `chunk=60`（秒）按块切，每块留 1 秒重叠——SenseVoice 按 ≤30 秒窗口训练，切块更稳；
+  `chunk=0` 表示整段一起送。
+- 环境变量：`ASR_BASE`（模型根目录）、`ASR_MODEL`（直接指模型目录）、
+  `ASR_MODEL_URL`（换下载源）、`ASR_NO_DOWNLOAD=1`（禁止自动下载，离线用）。
+- **Windows 自带的 tar 没有 bzip2**：`tar xjf` 会失败，所以这里优先用 Python 的
+  `tarfile`（`r:bz2`）解压/校验，不依赖系统 tar。
+- 它的老毛病是**同音错字，专有名词错得最狠**（人名几乎全错）。所以给它的下游
+  （做总结的 LLM）要明确要求「按上下文改正并用括号标出原词」。

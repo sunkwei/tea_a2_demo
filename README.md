@@ -28,6 +28,7 @@
 | ⑪ | 🦊 tea_a2 划词助手 | `tea-select/` | Firefox 扩展：划词即译/搜/总结 | `web-ext run` |
 | ⑫ | 🎮 GoDot 三国肉鸽 | `GoDot/` | Godot 4 项目 | Godot 打开 |
 | ⑬ | 🏗️ 青岛栈桥建模 | `zhanqiao/` | 真实尺寸 Blender 建模 | 打开 `.blend` |
+| ⑭ | 📼 本地视频分析 | `video_analysis/` | 抽帧拼图 + 本地 ASR → LLM 写分析报告 | `python video_analysis/video_analysis.py <视频文件>` |
 
 >
 > 三个 LLM 相关应用（便笺 / 划词助手 / 三国杀）默认连本机 `tea_a2`（`http://localhost:8383`）；
@@ -292,3 +293,25 @@ python zhihu/tests/test_zhihu_llm_post.py                        # 22 项离线�
 
 细节见 [`bilibili/README.md`](bilibili/README.md)、[`zhihu/README.md`](zhihu/README.md)、
 [`shared/README.md`](shared/README.md)。
+
+
+---
+
+## 📼 附：本地视频分析（`video_analysis/`）
+
+同一条链路的**本地版**：输入一个本地视频文件，自动 **抽帧拼图 → 视觉模型理解画面**，
+再叠加 **本地 ASR（SenseVoice，离线）转写语音**，两份材料一起交给 LLM，产出一份
+带时间线、关键概念、评价和结论的 markdown 分析报告。
+
+- 🖼️ **拼图带时间戳**：3×3 一张图，每格烧了原视频时间，模型能按时间顺序讲画面
+- 🎧 **ASR 全离线**：`shared/sensevoice.py` 的 SenseVoice Small（ONNX int8，纯 CPU，约 4 倍实时）
+- 🔗 **和 B 站工具同源**：LLM 走同一份 `~/.tea_agent/provider.yaml`，ASR 也共用 `shared/sensevoice.py`
+- ⚡ **能复用**：转写和识图结果缓存到本地，改提示词时 `--merge-only` 只重跑分析
+
+```bash
+python video_analysis/video_analysis.py "一次讲清楚中国10种茶叶.mp4"   # 给文件名就行
+python video_analysis/video_analysis.py --list                          # 看能搜到哪些视频
+python video_analysis/video_analysis.py xxx.mp4 --merge-only             # 只重跑 LLM 分析
+```
+
+细节见 [`video_analysis/README.md`](video_analysis/README.md)。
