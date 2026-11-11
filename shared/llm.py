@@ -73,7 +73,14 @@ def pick_provider(name=None, model=None):
     return pname, p, mname
 
 
-def llm_chat(p, model, messages, max_tokens=2000, temperature=0.2, tries=3):
+def llm_chat(p, model, messages, max_tokens=2000, temperature=0.2, tries=3,
+             extra=None):
+    """extra：额外塞进请求 body 的字段（dict）。
+
+    有些推理模型需要额外开关，例如 MiniMax 要
+    ``{"reasoning_effort": "low", "reasoning_split": True}``，
+    否则思考 token 会把 max_tokens 吃光、正文为空（finish_reason=length）。
+    """
     if requests is None:
         raise SystemExit("需要 requests：pip3 install requests")
     url = chat_completions_url(p.get("api_url"))
@@ -84,6 +91,8 @@ def llm_chat(p, model, messages, max_tokens=2000, temperature=0.2, tries=3):
     body = {"model": model, "messages": messages, "max_tokens": max_tokens}
     if temperature is not None:
         body["temperature"] = temperature
+    if extra:
+        body.update(extra)
     last = None
     for i in range(tries):
         try:
