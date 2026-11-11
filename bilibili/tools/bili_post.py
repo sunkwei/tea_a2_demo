@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""一条龙：B 站视频 → 语音转写(ASR) + 弹幕 → 分析报告 → 观众视角评论 → 发布 + 回读。
+"""一条龙：B 站视频 → 语音转写(ASR) + 抽屏识图 + 弹幕 → 分析报告 → 观众视角评论 → 发布 + 回读。
 
-**只用 ASR，不抓画面**：视频里的图表/画面文字会丢，所以报告里会标注"数字来自口述，可能有识别误差"。
+**默认三路素材都上**：语音（本地 SenseVoice）+ 画面（抽帧拼图 → 视觉模型）+ 弹幕。
+只想要最快的纯语音版时加 `--no_video`（跳过抽帧识图）。
+
 弹幕用来做两件事：① 给报告补上"观众反应"；② 让评论站在观众视角、避开弹幕里已经刷屏的共识。
 
 用法：
-    python bilibili/tools/bili_post.py BV19uW76YE7B                    # 只生成报告+评论候选（不发布）
+    python bilibili/tools/bili_post.py BV19uW76YE7B                    # 生成报告+3 个评论候选（不发布）
     python bilibili/tools/bili_post.py BV19uW76YE7B --yes              # 生成并发布（默认第 1 个候选）
     python bilibili/tools/bili_post.py BV19uW76YE7B --yes --pick 2     # 发布第 2 个候选
-    python bilibili/tools/bili_post.py BV19uW76YE7B --yes --reply 323365380016   # 回复某条评论
+    python bilibili/tools/bili_post.py BV19uW76YE7B --yes --reply 323646262448   # 回复某条评论
+    python bilibili/tools/bili_post.py BV19uW76YE7B --no_video          # 只要语音，不要抽屏
     python bilibili/tools/bili_post.py BV19uW76YE7B --facts notes.md    # 注入外部事实核查资料
     python bilibili/tools/bili_post.py BV19uW76YE7B --yes --comment-file my.md    # 用自己的正文
 
 产物：
-    ~/.tea_agent/bili/post/<bvid>/{audio.wav, asr.md, danmaku.txt, report.md, candidates.md}
+    ~/.tea_agent/bili/post/<bvid>/{audio.wav, asr.md, video.mp4, frames/, vision.md,
+                                   danmaku.txt, report.md, candidates.json, blob.txt}
     bilibili/analysis/<bvid>_观点报告.md
     bilibili/analysis/<bvid>_评论候选.md
     bilibili/analysis/<bvid>_已发布评论.md      （发布后）
 """
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -28,29 +33,31 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-for p in (os.path.join(ROOT, "bilibili"), os.path.join(ROOT, "shared"),
-          os.path.join(ROOT, "bilibili", "tools")):
+for p in (os.path.join(ROOT, "bilibili"), os.path.join(ROOT, "shared"), HERE):
     if p not in sys.path:
         sys.path.insert(0, p)
 
 import bili  # noqa: E402
 import danmaku as dm  # noqa: E402
+import frames  # noqa: E402
 import llm  # noqa: E402
 import sensevoice  # noqa: E402
 
 STATE = os.path.join(os.path.expanduser("~"), ".tea_agent", "bili", "post")
 ANALYSIS_DIR = os.path.join(ROOT, "bilibili", "analysis")
 
-# 报告用文字模型备胎（第一个是默认 provider）
+# 文本模型备胎（第一个是默认 provider）
 LLM_FALLBACKS = [("minimax", "MiniMax-M3.1-Flash"), ("mimo", "mimo-v2.6-pro"),
                   ("deepseek", "deepseek-flash")]
 
 REPORT_PROMPT = """你是资深中文时政/财经评论分析员。下面给你一个 B 站视频的素材：
-视频元信息 + **本地语音转写逐字稿**（SenseVoice，可能有同音错字，按上下文理解）+ **弹幕**（观众实时反应）。
+视频元信息 + **本地语音转写逐字稿**（SenseVoice，可能有同音错字，按上下文理解）
++ **画面描述**（抽帧拼图交给视觉模型的结果，带时间点；如果这一节是空的，说明这次没做抽屏）
++ **弹幕**（观众实时反应）。
 
-注意：**这份素材里没有视频画面**，所以画面上才有的图表、字幕、数据一概没有；
-所有事实与数字都来自口述，**不要编造素材里没有的事实、数据或出处**，也不要假设看过画面。
-转写含混处写「（此处转写不清）」并说明推断依据。
+注意：转写可能有同音错字（比如"显理论"其实是"弦理论"），要按上下文理解；
+**不要编造素材里没有的事实、数据或出处**，也不要假设看过没给的东西。
+关键事实要区分来源：**画面上写着的**（有画面证据）＞ **口述的**（只有转写）＞ **查不到的**。
 
 按下面的 markdown 结构输出（标题照抄，不要增删章节）：
 
@@ -58,9 +65,9 @@ REPORT_PROMPT = """你是资深中文时政/财经评论分析员。下面给你
 ## 核心论点
 （3~6 条，每条一行，加粗关键词）
 ## 论证结构（按时间线）
-（表格：时间 | 段落主旨 | 论据）
+（表格：时间 | 段落主旨 | 论据 | 论据来自口述还是画面）
 ## 关键事实与数据
-（表格：视频的说法 | 素材里的佐证程度（转写明确 / 转写含混 / 素材里查不到）｜ 可能识别有误的数字要标出来）
+（表格：视频的说法 | 来源（画面文字 / 只有口述 / 查不到） | 佐证程度与备注）
 ## 弹幕里的观众反应
 （观众主要在说什么、情绪倾向、弹幕提出的哪些反驳值得注意）
 ## 值得注意的推理特点
@@ -74,17 +81,18 @@ REPORT_PROMPT = """你是资深中文时政/财经评论分析员。下面给你
 
 COMMENT_PROMPT = """你在给一个 B 站视频写一条**观众视角的评论**（会真的发出去）。
 
-素材：视频元信息 + 逐字稿 + 弹幕画像（观众实时反应、刷屏句、观众自己提出的反驳）。
+素材：视频元信息 + 逐字稿 + （可选）画面描述 + 弹幕画像（观众实时反应、刷屏句、观众自己提出的反驳）。
 
 写作要求：
-1. **观众口吻**，像看完视频的观众在跟别人聊天。不说教、不贴标签、不端着、不用"我认为本题应当如何论证"这种口气。
-2. **先认可**：从逐字稿里挑出这期视频**具体**讲得好的地方（某个类比、某个结构、某个被承认的常识），引用或点出它，别写成"整体不错"。
+1. **观众口吻**，像看完视频的观众在跟别人聊天。不说教、不贴标签、不端着，不用"本题应当如何论证"这种口气。
+2. **先认可**：从素材里挑出这期视频**具体**讲得好的地方（某个类比、某个结构、某个被承认的常识），点出它，别写成"整体不错"。
 3. **再补 2~3 条实质性的不同意见或补充**：
-   - 事实/口径问题要具体（"X 其实是 Y""这个数字是 Z 口径"），但语气是商榷不是纠错；
-   - 数字只能来自逐字稿；如果你判断某个数字可能是转写误差，就写"这句我可能听错了，但我的理解是……"；
+   - 事实/口径问题要具体（"X 其实是 Y""这个数字是 Z 口径"），语气是商榷不是纠错；
+   - 数字只能来自素材；有画面证据时可以顺手引用画面上的原文（更硬）；
    - **不要重复弹幕里已经刷屏的共识**（那些观众都说了），要补充弹幕里没人说清楚的；
-   - 如果弹幕里提出了一个更好的角度（例如用弹幕里的那条反驳），可以接过来，但要加自己的判断。
-4. **照顾弹幕的情绪**：如果观众普遍在嘲讽/祛魅/共鸣，评论不要一副置身事外的腔调；如果弹幕里有明显的事实错误（例如人名、机构名错了），可以顺手点一下（"其实叫谢太宝"），这很有价值。
+   - 如果弹幕里提出了一个更好的角度，可以接过来，但要加自己的判断。
+4. **照顾弹幕的情绪**：观众普遍在嘲讽/共鸣时，评论不要一副置身事外的腔调；
+   弹幕里有明显的事实错误（人名、机构名、年代错了）可以顺手点一下（"其实叫谢太宝"），这很有价值。
 5. **结尾**：留一个具体的期待或追问，不要空喊"期待更多讨论"。
 6. 长度 **600~950 个字**（含标点）。纯文本，**不要用 markdown 标记、不要标题、不要列表符号**，段落之间用换行。
 """
@@ -185,7 +193,7 @@ def make_comments(blob, n=3):
             log("[comment%d] 结尾被截断（%d 字），加倍预算重试" % (i + 1, len(txt)))
         if not txt:
             continue
-        txt = (txt or "").strip()
+        txt = txt.strip()
         if txt.startswith("```"):
             txt = txt.split("```")[-1]
         if not looks_complete(txt):
@@ -208,6 +216,35 @@ def make_comments(blob, n=3):
         out.append(txt)
         log("[comment%d] %d 字" % (i + 1, len(txt)))
     return out
+
+
+def download_video(sess, bv, cid, dest, qn=64, tries=3):
+    """下媒体流。CDN 偶尔第一次给空文件 → 重试；再不行用 requests 流式兜底。"""
+    last = None
+    for i in range(tries):
+        try:
+            pu = bili.fetch_playurl(sess, bv, cid, qn=qn)
+            bili.download_media(sess, pu["url"], dest)
+            if os.path.getsize(dest) > 1024:
+                return dest
+            last = RuntimeError("文件是空的")
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+        log("视频下载失败（第 %d 次）：%s" % (i + 1, str(last)[:120]))
+        time.sleep(3)
+    # 兜底：requests 流式
+    import requests
+    pu = bili.fetch_playurl(sess, bv, cid, qn=qn)
+    with sess.get(pu["url"], headers={"Referer": "https://www.bilibili.com/"},
+                  stream=True, timeout=120) as r:
+        r.raise_for_status()
+        with open(dest, "wb") as fh:
+            for chunk in r.iter_content(1 << 20):
+                fh.write(chunk)
+    if not os.path.exists(dest) or os.path.getsize(dest) < 1024:
+        raise RuntimeError("视频下载失败：%s" % last)
+    log("已用 requests 流式兜底下载")
+    return dest
 
 
 def post_comment(sess, bvid, aid, msg, rpid=None):
@@ -247,11 +284,18 @@ def main():
     ap.add_argument("--yes", action="store_true", help="真的发布（默认只生成草稿）")
     ap.add_argument("--pick", type=int, default=1, help="发布第几个候选（1 起）")
     ap.add_argument("--reply", default=None, help="作为某条评论的回复（rpid）")
-    ap.add_argument("--facts", default=None, help="外部事实核查资料（文本文件），会喂给模型")
+    ap.add_argument("--facts", default=None, help="外部事实核查资料（文本文件）")
     ap.add_argument("--comment-file", default=None, help="用自己的正文发布（跳过生成）")
     ap.add_argument("--candidates", type=int, default=3, help="生成几个评论候选")
     ap.add_argument("--no-report", action="store_true")
-    ap.add_argument("--force", action="store_true", help="忽略缓存，重跑 ASR/弹幕/报告")
+    ap.add_argument("--no_video", action="store_true",
+                    help="不抽帧识图（默认是要的：ASR + 画面 + 弹幕 三路）")
+    ap.add_argument("--qn", type=int, default=64, help="清晰度 64=720P")
+    ap.add_argument("--interval", type=int, default=30, help="抽帧间隔（秒）")
+    ap.add_argument("--max-sheets", type=int, default=8, help="最多几张拼图")
+    ap.add_argument("--cols", type=int, default=3)
+    ap.add_argument("--rows", type=int, default=3)
+    ap.add_argument("--force", action="store_true", help="忽略缓存，重跑 ASR/弹幕/画面/报告")
     ap.add_argument("--out-dir", default=None, help="产物目录（默认 bilibili/analysis）")
     args = ap.parse_args()
     bv = args.bvid
@@ -269,7 +313,7 @@ def main():
     log("《%s》 UP:%s ｜ %d:%02d ｜ 播放%s 点赞%s" %
         (title, owner, dur // 60, dur % 60, stat.get("view"), stat.get("like")))
 
-    # 1) 音频 + ASR（不用视频、不抓画面）
+    # 1) 语音（只下音频轨）
     asr_path = os.path.join(work, "asr.md")
     if os.path.exists(asr_path) and os.path.getsize(asr_path) > 200 and not args.force:
         asr_text = io.open(asr_path, encoding="utf-8").read()
@@ -303,6 +347,36 @@ def main():
         write(dm_raw, json.dumps(items, ensure_ascii=False))
         log("弹幕 %d 条" % len(items))
 
+    # 3) 画面（抽帧拼图 → 视觉模型）；--no_video 才跳过
+    vision_text = ""
+    if args.no_video:
+        log("--no_video：跳过抽屏")
+    else:
+        vision_path = os.path.join(work, "vision.md")
+        if os.path.exists(vision_path) and os.path.getsize(vision_path) > 200 \
+                and not args.force:
+            vision_text = io.open(vision_path, encoding="utf-8").read()
+            log("复用画面描述")
+        else:
+            mp4 = os.path.join(work, "video.mp4")
+            if not (os.path.exists(mp4) and os.path.getsize(mp4) > 1024 * 1024) \
+                    or args.force:
+                log("下载媒体流（qn=%s）…" % args.qn)
+                download_video(sess, bv, cid, mp4, qn=args.qn)
+            log("mp4 %.1f MB" % (os.path.getsize(mp4) / 1048576.0))
+            per = args.cols * args.rows
+            step, nsheets = frames.plan_sampling(dur, args.interval, per,
+                                                 max_sheets=args.max_sheets)
+            sheets, _per = frames.extract_sheets(
+                mp4, os.path.join(work, "frames"), interval=step, cols=args.cols,
+                rows=args.rows, max_sheets=nsheets, font=frames.find_font())
+            log("抽帧 %d 张拼图（每 %ds 一帧，%dx%d）" % (len(sheets), step,
+                                                       args.cols, args.rows))
+            notes = frames.describe(sheets, step, per=per, cols=args.cols,
+                                    rows=args.rows)
+            vision_text = frames.format_notes(notes)
+            write(vision_path, vision_text)
+
     facts = ""
     if args.facts and os.path.exists(args.facts):
         facts = "\n\n【外部事实核查资料（可信度高于转写，引用时以它为准）】\n" + \
@@ -316,13 +390,20 @@ def main():
                stat.get("view"), stat.get("like"), stat.get("favorite"),
                stat.get("reply"), (view.get("desc") or "")[:500]))
     blob += "## 语音转写逐字稿（本地 SenseVoice，可能有同音错字）\n" + asr_text + "\n\n"
+    if vision_text:
+        blob += "## 画面描述（抽帧拼图 + 视觉模型，带时间点）\n" + vision_text + "\n\n"
     blob += "## 弹幕画像\n" + dm_text + "\n" + facts
     write(os.path.join(work, "blob.txt"), blob)
+    blob_hash = hashlib.md5(blob.encode("utf-8")).hexdigest()
 
-    # 3) 分析报告
+    # 4) 分析报告
     if not args.no_report:
         cached = os.path.join(work, "report.md")
-        if os.path.exists(cached) and os.path.getsize(cached) > 500 and not args.force:
+        hfile = os.path.join(work, "report.hash")
+        old_hash = io.open(hfile, encoding="utf-8").read().strip() \
+            if os.path.exists(hfile) else ""
+        if (os.path.exists(cached) and os.path.getsize(cached) > 500
+                and old_hash == blob_hash and not args.force):
             report = io.open(cached, encoding="utf-8").read()
             log("复用分析报告（%d 字）" % len(report))
         else:
@@ -332,34 +413,37 @@ def main():
                  {"role": "user", "content": blob}],
                 max_tokens=14000, label="report", expect="结论")
             write(cached, report)
+            write(hfile, blob_hash)
         rep_path = write(os.path.join(out_dir, "%s_观点报告.md" % bv), report)
         log("报告 → %s" % rep_path)
 
-    # 4) 评论候选
+    # 5) 评论候选
     if args.comment_file:
         cands = [io.open(args.comment_file, encoding="utf-8").read().strip()]
         log("用自带正文：%d 字" % len(cands[0]))
     else:
         cjson = os.path.join(work, "candidates.json")
-        if os.path.exists(cjson) and not args.force:
+        chash = os.path.join(work, "candidates.hash")
+        cands = []
+        old_hash = io.open(chash, encoding="utf-8").read().strip() \
+            if os.path.exists(chash) else ""
+        if os.path.exists(cjson) and old_hash == blob_hash and not args.force:
             try:
                 cands = json.load(io.open(cjson, encoding="utf-8"))["candidates"]
                 log("复用评论候选（%d 条）" % len(cands))
             except Exception:  # noqa: BLE001
                 cands = []
-        else:
-            cands = []
         if not cands:
             log("生成 %d 个评论候选…" % args.candidates)
             cands = make_comments(blob, n=args.candidates)
             if not cands:
                 raise SystemExit("评论候选生成失败")
             write(cjson, json.dumps({"candidates": cands}, ensure_ascii=False, indent=1))
+            write(chash, blob_hash)
         write(os.path.join(out_dir, "%s_评论候选.md" % bv),
               "# %s —— 评论候选\n\n" % title +
-              "\n\n".join("## 候选 %d（%d 字）\n\n%s" % (i + 1, len(c), c)
+              "\n\n".join("## 候选 %d（%d 字）\n\n%s" % (i, len(c), c)
                           for i, c in enumerate(cands)))
-        write(os.path.join(work, "candidates.md"), "\n\n".join(cands))
     cand_path = os.path.join(out_dir, "%s_评论候选.md" % bv)
     for i, c in enumerate(cands, 1):
         print("=" * 30, "候选 %d（%d 字）：%s" % (i, len(c),
@@ -367,12 +451,12 @@ def main():
         print(c)
     print("（完整候选正文见 %s）" % cand_path)
 
-    # 5) 发布
+    # 6) 发布
     idx = max(1, min(args.pick, len(cands))) - 1
     msg = cands[idx]
     if len(msg) > 1000:
-        log("正文 %d 字超过 1000，先截断" % len(msg))
-        msg = msg[:1000]
+        log("正文 %d 字超过 1000，先裁到最后一个完整句" % len(msg))
+        msg = trim_to_sentence(msg, 1000)
     if not args.yes:
         log("dry-run：加 --yes 才真发（将发候选 %d）" % (idx + 1))
         return
@@ -384,8 +468,9 @@ def main():
                   "# 《%s》—— 已发布的 B 站评论\n\n"
                   "> **视频**：%s ｜ UP主：%s ｜ aid=%s\n"
                   "> **评论 rpid**：%s ｜ 发布：%s ｜ 正文 %d 字\n"
-                  "> **发布方式**：`bilibili/tools/bili_post.py`（ASR+弹幕 → 评论 → "
-                  "POST `x/v2/reply/add` → `x/v2/reply/main?mode=2&next=0` 回读校验）\n\n---\n\n%s\n"
+                  "> **发布方式**：`bilibili/tools/bili_post.py`"
+                  "（ASR+抽屏+弹幕 → 评论 → POST `x/v2/reply/add` → "
+                  "`x/v2/reply/main?mode=2&next=0` 回读校验）\n\n---\n\n%s\n"
                   % (title, bv, owner, aid, rpid,
                      time.strftime("%Y-%m-%d %H:%M"), len(msg), msg))
     log("归档 → %s" % arch)

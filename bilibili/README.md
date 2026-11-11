@@ -237,10 +237,11 @@ python bili.py discover --watch-later               # 挑完顺手加进去
 ## 一条龙：分析视频 → 写评论 → 发出去（`tools/bili_post.py`）
 
 `bili.py` 是"抓内容做摘要"；`tools/bili_post.py` 是**另一条路**：把一个 B 站视频
-**听完（ASR）+ 看弹幕** → 生成分析报告 → 生成**观众视角**的评论 → 发布 → 回读校验。
+**听完（ASR）+ 看画面（抽帧识图）+ 看弹幕** → 生成分析报告 → 生成**观众视角**的评论
+→ 发布 → 回读校验。
 
 ```bash
-# 只生成报告 + 3 个评论候选（不发布，默认就是 dry-run）
+# 生成报告 + 3 个评论候选（不发布，默认就是 dry-run）
 python bilibili/tools/bili_post.py BV19uW76YE7B
 
 # 生成并发布（默认发第 1 个候选）
@@ -254,7 +255,10 @@ python bilibili/tools/bili_post.py BV19uW76YE7B --yes --comment-file my.md
 # 注入外部事实核查资料（新闻/官方文件摘录），会喂给模型并被优先采信
 python bilibili/tools/bili_post.py BV19uW76YE7B --facts notes.md
 
-# 忽略缓存重跑（ASR / 弹幕 / 报告 / 候选）
+# 只要语音、不要抽屏（最快的一路）
+python bilibili/tools/bili_post.py BV19uW76YE7B --no_video
+
+# 忽略缓存重跑（ASR / 弹幕 / 抽屏 / 报告 / 候选）
 python bilibili/tools/bili_post.py BV19uW76YE7B --force
 ```
 
@@ -264,20 +268,17 @@ python bilibili/tools/bili_post.py BV19uW76YE7B --force
 |---|---|---|
 | 元信息 | `x/web-interface/view` | 标题 / UP / 时长 / 数据 / 简介 |
 | **语音** | 只下**音频轨**（DASH audio）→ 本地 SenseVoice Small（60 秒切块） | `~/.tea_agent/bili/post/<bv>/asr.md` |
+| **画面** | 下渐进式 MP4 → ffmpeg 抽帧拼 3×3 大图（每格烧时间戳）→ 视觉模型逐张描述 | `video.mp4`、`frames/`、`vision.md` |
 | **弹幕** | `comment.bilibili.com/{cid}.xml`（一次拿全量）；坏了退回 `x/v2/dm/web/seg.so`（自带极简 protobuf 解码） | `danmaku.txt`（画像）+ `danmaku.json`（原始） |
-| 报告 | 逐字稿 + 弹幕 → LLM，章节固定（一句话概括/核心论点/论证结构/关键事实与数据/**弹幕里的观众反应**/推理特点/可质疑之处/结论） | `bilibili/analysis/<bv>_观点报告.md` |
+| 报告 | 逐字稿 + 画面描述 + 弹幕 → LLM，章节固定（一句话概括/核心论点/论证结构/关键事实与数据/**弹幕里的观众反应**/推理特点/可质疑之处/结论） | `bilibili/analysis/<bv>_观点报告.md` |
 | 评论 | 3 个不同切入角度的候选（补充型 / 商榷型 / 接弹幕的话），纯文本、600~950 字 | `bilibili/analysis/<bv>_评论候选.md` |
 | 发布 | POST `x/v2/reply/add`（`type=1` + `oid=aid` + `csrf=bili_jct`） | — |
 | 回读 | `x/v2/reply/main?mode=2&next=0`（**按时间的最新一页**） | `bilibili/analysis/<bv>_已发布评论.md` |
 
-### 为什么"只用 ASR、不抓图"
-
-- 抓画面要下整个 MP4（34 分钟视频 ≈ 113 MB）+ ffmpeg 拼图 + 逐张识图（几分钟），
-  而**口述已经包含绝大部分论据**；只下音频轨（几 MB）快一个数量级。
-- 代价是**画面上的图表/字幕拿不到**——所以报告里每个数字都标了"转写明确 / 转写含混 /
-  素材里查不到"，并会提示哪些词可能是同音错字（例如"显理论"→"弦理论"、"马斯科"→"马斯克"）。
-- 弹幕**替代不了**画面，但补上了两样东西：**观众在哪些点上已经形成共识**（评论不该重复刷屏内容）
-  和**观众自己指出的错误**（口播人名写错时弹幕会喊"人家叫谢太宝"）。
+三路素材各有分工：**语音**给论证骨架（但同音错字多，人名几乎全错）；**画面**给硬证据
+（图表上的数字、文件标题、地图标注）；**弹幕**给观众共识与纠错。
+报告里每个数字都标了来源（"画面文字 / 只有口述 / 查不到"），评论里也会顺手点出
+弹幕发现的错（"其实叫谢太宝"）。
 
 ### 弹幕能干什么
 
@@ -301,6 +302,10 @@ python bilibili/tools/danmaku.py BV19uW76YE7B --json     # 原始列表
 - **推理模型会把 `max_tokens` 耗在思考上**，正文写一半被截断（结尾停在"AI怎样"这种半句）。
   工具因此做了：MiniMax 调用带 `reasoning_effort=low` + `reasoning_split=true`、
   评论生成后检查**结尾是否完整**、不完整就加倍预算重试、还不行就裁到最后一个句号。
+- **CDN 偶尔第一次请求给空文件**（`bili.download_media` 报"文件是空的"）→ 工具会重试 3 次，
+  再不行用 requests 流式下载兜底。
+- **缓存按素材失效**：报告/候选缓存记的是 blob 的 md5；这次开抽屏、上次没开，
+  blob 变了缓存自动作废（`--force` 可强制重算）。
 - **cmd 控制台是 GBK**，工具输出已统一成 UTF-8；长中文正文看 `bilibili/analysis/*_评论候选.md` 最省事。
-- ASR 缓存、弹幕画像、报告、候选评论都落在 `~/.tea_agent/bili/post/<bv>/`，重跑会自动复用；
-  `--force` 才重算。
+- 抽屏的两个前提：`tile` 拼图**帧数不够会补黑格**（间隔要按 `plan_sampling()` 算），
+  Windows 上字体路径要写成 `C\:/Windows/Fonts/msyh.ttc`（否则**静默不烧时间戳**）。
