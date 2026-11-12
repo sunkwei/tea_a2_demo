@@ -170,14 +170,26 @@ def trim_to_sentence(txt, limit=1000):
     return cut
 
 
-def make_comments(blob, n=3):
-    """让模型出 n 个不同切入角度的评论候选。"""
+def make_comments(blob, n=3, style="structured"):
+    """让模型出 n 个不同切入角度的评论候选。
+
+    style=structured：原来的写法（先认可、再补 2~3 条意见、收尾留期待）。
+    style=human：口语化、像真人随手敲的；提示词里带"AI 味句式"黑名单。
+    """
     out = []
     for i in range(n):
-        angle = ["补充为主：把他没展开的地方补上",
-                 "商榷为主：指出事实口径或论证上的具体问题",
-                 "接观众的话：结合弹幕里没人说清楚的那一层来谈"][i % 3]
-        msgs = [{"role": "system", "content": COMMENT_PROMPT},
+        if style == "human":
+            angle = ["顺着视频里最有感觉的那个点随口聊",
+                     "挑一个具体的细节说说你的看法",
+                     "接弹幕里那句话，但说点不一样的东西"][i % 3]
+            sys_prompt = HUMAN_COMMENT_PROMPT + "\n\n【要避开的老套句式】" + \
+                "、".join(AI_TELLS)
+        else:
+            angle = ["补充为主：把他没展开的地方补上",
+                     "商榷为主：指出事实口径或论证上的具体问题",
+                     "接观众的话：结合弹幕里没人说清楚的那一层来谈"][i % 3]
+            sys_prompt = COMMENT_PROMPT
+        msgs = [{"role": "system", "content": sys_prompt},
                 {"role": "user", "content": "这一条请侧重：%s\n\n%s" % (angle, blob)}]
         txt = ""
         for budget in (6000, 12000):
@@ -199,13 +211,17 @@ def make_comments(blob, n=3):
         if not looks_complete(txt):
             log("[comment%d] 仍不完整，裁到最后一个完整句" % (i + 1))
             txt = trim_to_sentence(txt, 1000)
-        if len(txt) < 550:
+        min_len = 220 if style == "human" else 550
+        if len(txt) < min_len:
             log("[comment%d] 只有 %d 字，重试一次要求写满" % (i + 1, len(txt)))
             retry = list(msgs) + [
                 {"role": "assistant", "content": txt},
                 {"role": "user", "content":
-                 "太短了，请重写一版：务必写满 600~950 字，多给具体的细节、"
-                 "原话和弹幕里的信息，不要空话套话。"}]
+                 ("太短了，请重写一版：务必写满 250~600 字，多给具体的细节和"
+                  "弹幕里的信息，不要空话套话。"
+                  if style == "human" else
+                  "太短了，请重写一版：务必写满 600~950 字，多给具体的细节、"
+                  "原话和弹幕里的信息，不要空话套话。")}]
             try:
                 txt2 = llm_chat_resilient(retry, max_tokens=4000,
                                           label="comment%d-retry" % (i + 1))
@@ -245,6 +261,40 @@ def download_video(sess, bv, cid, dest, qn=64, tries=3):
         raise RuntimeError("视频下载失败：%s" % last)
     log("已用 requests 流式兜底下载")
     return dest
+
+
+HUMAN_COMMENT_PROMPT = """你在给一个 B 站视频写一条**评论**，要像真人看完随手敲的，
+一眼看不出是机器写的（这很重要，UP 和别的观众最烦那种模板腔）。
+
+素材：视频元信息 + 逐字稿 + （可选）画面描述 + 弹幕画像（观众在说什么、哪些话被刷屏了）。
+
+写法要求：
+1. **开口就说事**：直接从视频里某个具体的东西说起（一个画面、一句话、一个数据、一个吐槽点），
+   不要"这期讲得不错"这种开场白。
+2. **不要分点**：不要"一、二、三"，不要"首先/其次/最后"，不要小标题、不要 markdown 符号。
+   就 1~3 段自然的话，长短不一，允许有短句和没说完的半句。
+3. **只讲 1~2 个点**：真人评论通常不会面面俱到。挑你最想说的那一两个讲透，
+   剩下的别提，也别把视频内容复述一遍。
+4. **语气**：可以有"说实话""我一开始没反应过来""这就有点…""反正我是这么看"这类口语；
+   允许用"其实""挺""就""吧"这类词；不要书面语（该视频/本片/UP主/综上所述/值得指出的是）。
+5. **别吹捧**：不需要先夸一通。想夸就顺手带一句具体的（"那句比喻挺贴切"），不想夸就直接说事。
+6. **别编造自己的经历**：不要写"我看了三遍""我朋友说""我是做这行的"这类没有依据的话。
+   只表达你对内容本身的反应和判断。
+7. **弹幕已经在刷的别跟着刷**（那些观众都说了）；弹幕里出现的口误或事实错误可以顺手点一句。
+8. **结尾别升华**：不要"期待后续更……的讨论""总体来说……"，就用一句大白话收尾，
+   可以是个疑问、一个自己的看法，或者干脆一句吐槽。
+9. **别写成两段对称的总结**：不要"第一段复述现象 + 第二段给结论"的整齐结构，
+   段落长短拉开，允许有一句只有几个字的短句。
+10. 长度 **250~600 字**。纯文本，段落之间换行。
+"""
+
+AI_TELLS = [
+    "这期信息密度很高", "补充几点", "总体挺喜欢", "期待后续", "值得指出的是",
+    "首先", "其次", "综上", "本视频", "该视频", "UP主", "一方面", "另一方面",
+    # 下面这些是"两段式总结"的典型口气，也很容易露馅
+    "最讽刺的是", "更有意思的是", "比这更实在的是", "所以要真治", "整件事不是",
+    "整件事就是", "归根结底", "反过来说", "问题不在于", "而在于",
+]
 
 
 def post_comment(sess, bvid, aid, msg, rpid=None):
@@ -287,6 +337,8 @@ def main():
     ap.add_argument("--facts", default=None, help="外部事实核查资料（文本文件）")
     ap.add_argument("--comment-file", default=None, help="用自己的正文发布（跳过生成）")
     ap.add_argument("--candidates", type=int, default=3, help="生成几个评论候选")
+    ap.add_argument("--style", choices=("structured", "human"), default="structured",
+                    help="评论风格：structured=先认可再补意见；human=口语化像真人写的")
     ap.add_argument("--no-report", action="store_true")
     ap.add_argument("--no_video", action="store_true",
                     help="不抽帧识图（默认是要的：ASR + 画面 + 弹幕 三路）")
@@ -435,7 +487,7 @@ def main():
                 cands = []
         if not cands:
             log("生成 %d 个评论候选…" % args.candidates)
-            cands = make_comments(blob, n=args.candidates)
+            cands = make_comments(blob, n=args.candidates, style=args.style)
             if not cands:
                 raise SystemExit("评论候选生成失败")
             write(cjson, json.dumps({"candidates": cands}, ensure_ascii=False, indent=1))
@@ -462,7 +514,12 @@ def main():
         return
     rpid, _ = post_comment(sess, bv, aid, msg, args.reply)
     log("已发布 rpid=%s（候选 %d）" % (rpid, idx + 1))
-    ok, hit = verify(sess, aid, rpid, msg)
+    ok, hit = False, None
+    for i in range(4):  # 刚发完列表接口还没同步，要等一下再回读
+        time.sleep(2 if i == 0 else 3)
+        ok, hit = verify(sess, aid, rpid, msg)
+        if ok:
+            break
     log("回读：%s" % ("确认落地" if ok else "没在最新一页找到，可能还在审核"))
     arch = write(os.path.join(out_dir, "%s_已发布评论.md" % bv),
                   "# 《%s》—— 已发布的 B 站评论\n\n"
