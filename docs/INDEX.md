@@ -21,6 +21,7 @@
 | 10 | 🦊 tea_a2 划词助手 | `tea-select/` | Firefox 扩展：划词后弹横幅，一键翻译/搜索/总结 | JS (MV3) | `web-ext run` | `node tea-select/tools/selftest.mjs` |
 | 11 | 🎮 GoDot · 三国肉鸽 | `GoDot/` | Godot 4 项目：三国题材肉鸽 | Godot 4 | Godot 打开 `project.godot` | — |
 | 12 | 🏗️ 青岛栈桥 & 回澜阁 | `zhanqiao/` | 按真实物理尺寸的 Blender 建模（含 `.blend`） | Blender | 打开 `zhanqiao.blend` | `python zhanqiao/verify.py` |
+| 13 | 🚀 终末地 · 舰桥观测舱 | `endfield-ship/` | 明日方舟风格飞船内舱：泰拉II 行星 + 天梯缆索 + ARK 风格 HUD | Three.js + 原生 ESM | `npm run dev` | `npm run test:endfield` |
 
 > 每个项目都有自己的 `README.md`，细节看那一份；本页只做索引与横向对比。
 
@@ -43,6 +44,13 @@
 > **🧊 三阶魔方与 📌 便笺是独立的 `file://` 应用**，用经典 `<script>` 引入（ES module 在
 > `file://` 下会被 CORS 拦掉），因此**不进入 Vite 构建**、也不需要打包；双击 `index.html` 即用。
 > 开发时也能用 `npm run dev` 访问 `/rubiks-cube/`、`/sticky-notes/`。
+
+### A2. 3D 场景（Three.js）
+
+- 🐱 根 `src/`：喵屋便利店 —— 雨夜霓虹小镇（程序化贴图 + Bloom + 积水反射）
+- 🚀 `endfield-ship/`：终末地 · 舰桥观测舱 —— 泰拉II 行星 / 天梯缆索 / 明日方舟风格 HUD
+  （PBR + 程序化 Canvas 贴图 + 体积光 + Bloom 调色 + PRTS 终端）
+  自测：`npm run test:endfield`（70 项离线断言）、`npm run endfield:verify`（46 项无头浏览器）
 
 ### B. LLM 应用（会调模型的那些）
 
@@ -104,6 +112,8 @@ LLM 调用封装、正文清洗、摘要提示词与解析。两者各自只 imp
 | `npm run test:iptv` / `npm run iptv:single` | IPTV 离线断言 / 打包单文件版 |
 | `npm run test:sticky` / `npm run sticky:verify` | 便笺离线断言 / 无头 Edge 端到端验证 |
 | `npm run test:rubik` / `npm run rubik:verify` | 魔方离线断言 / 无头 Edge 端到端验证 |
+| `npm run test:endfield` | 终末地舰桥观测舱离线断言（纯 Node，70 项） |
+| `npm run endfield:verify` | 终末地舰桥观测舱无头 Edge 端到端验证 + 截图（46 项） |
 | `npm run sgss:web` / `npm run test:sgss` | AI 三国杀网页版 / pytest |
 | `npm run sgss:doctor` | 三国杀环境自检（模型、端口、依赖） |
 
@@ -140,6 +150,7 @@ tea_a2_demo/
 ├── tea-select/               # ⑫ Firefox 划词扩展
 ├── GoDot/                    # ⑬ Godot 项目
 ├── zhanqiao/                 # ⑭ Blender 建模
+├── endfield-ship/             # ⑮ 终末地 · 舰桥观测舱（Three.js + 原生 ESM）
 ├── docs/                     # 全局索引、预览图、机制分析
 └── .tea_agent_run/           # 会话工作区（不入库）
 ```
@@ -149,4 +160,5 @@ tea_a2_demo/
 ## 📌 相关文档
 
 - [`docs/tea_a2-8282-mechanism-gaps.md`](tea_a2-8282-mechanism-gaps.md) —— tea_a2 机制缺口分析
+- [`docs/starship-deck-comparison.md`](starship-deck-comparison.md) —— 与 starship-deck（fable 5.2）的逐维度对比报告：视觉/渲染/光照/性能/交互/🔊声音/工程验证
 - 各子项目的 `README.md` —— 各自的完整说明与踩坑记录
