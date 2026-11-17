@@ -1,3 +1,5 @@
+本仓库项目皆由 [tea_a2](https://github.com/sunkwei/tea_a2) 创建
+
 # 🐱 喵屋便利店 · Midnight Meow Mart
 
 一个完全用 **Three.js 程序化生成**的雨夜 3D 小镇：霓虹灯便利店、会走路的橘猫、积水倒影、斜飞的雨丝、远景城市天际线。
