@@ -929,6 +929,27 @@ def fetch_audio(sess, bvid, cid, dest_wav, media=None):
     raise RuntimeError("音频下载/转换都失败了：%s" % last)
 
 
+def find_ttf_font():
+    """找一个能用的 ttf（用来在拼图每格上烧时间戳）。
+
+    Windows 的路径里有 ':' 和 '\\'，在 ffmpeg 滤镜里要转义：
+    C:\Windows\Fonts\arial.ttf  ->  C\\:/Windows/Fonts/arial.ttf
+    """
+    cands = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/consola.ttf",
+        "C:/Windows/Fonts/msyh.ttc",
+    ]
+    for p in cands:
+        if os.path.exists(p):
+            # 整段用单引号圈住：filtergraph 级就不会把路径里的 ':' 当分隔符
+            return "'" + p.replace("\\", "/").replace(":", "\\:") + "'"
+    return None
+
+
 def extract_sheets(video, outdir, interval=10, width=640, cols=3, rows=3):
     """抽帧并**拼成大图**：一张图 = cols×rows 帧（每格烧了时间戳）。
 
@@ -941,11 +962,11 @@ def extract_sheets(video, outdir, interval=10, width=640, cols=3, rows=3):
     for f in os.listdir(outdir):
         if f.endswith(".jpg"):
             os.remove(os.path.join(outdir, f))
-    font = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    font = find_ttf_font()
     vf = "fps=1/%d,scale=%d:-1" % (max(1, interval), width)
-    if os.path.exists(font):
+    if font:
         # 每格左上角写上时间戳，模型才能说「第 1 分 20 秒那格」
-        vf += (",drawtext=fontfile=%s:text='%%{pts\\:hms}':x=8:y=8:fontsize=26"
+        vf += (",drawtext=fontfile=%s:text='%%{pts\\:hms}':x=8:y=8:fontsize=24"
                ":fontcolor=white:box=1:boxcolor=black@0.65:boxborderw=4" % font)
     vf += ",tile=%dx%d" % (cols, rows)
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", video, "-vf", vf,
@@ -1385,9 +1406,10 @@ def cmd_summarize(args):
             meta.get("duration"), meta.get("sub_lan"))
         print("  [%d/%d] %s" % (n, len(todo), (meta.get("title") or "")[:30]))
         try:
-            raw = llm.llm_chat(prov, model,
-                               [{"role": "system", "content": SUMMARY_PROMPT},
-                                {"role": "user", "content": head + text}])
+            raw = llm_chat_resilient(pname, model,
+                                     [{"role": "system", "content": SUMMARY_PROMPT},
+                                      {"role": "user", "content": head + text}],
+                                     max_tokens=4000, label="llm")
             obj = llm.extract_json_loose(raw)
         except Exception as exc:
             print("      失败: %s" % exc)
@@ -1415,6 +1437,14 @@ def cmd_summarize(args):
 # digest
 # --------------------------------------------------------------------------
 CAT_ORDER = ["AI评测", "科技数码", "知识科普", "游戏", "娱乐", "生活", "体育", "其他"]
+
+# 素材来源标签：字幕是 B 站给的（人写的 / AI 识别 / 翻译），
+# asr-sensevoice 是本地 SenseVoice 转写的（那类视频 B 站没字幕轨）。
+SRC_LABEL = {
+    "zh-CN": "B站字幕·人写", "zh-Hans": "B站字幕·人写", "zh-Hant": "B站字幕·人写(繁)",
+    "zh": "B站字幕", "ai-zh": "B站AI字幕", "ai-en": "B站AI字幕(英译)",
+    "ai-ja": "B站AI字幕(日译)", "asr-sensevoice": "本地ASR转写(SenseVoice)",
+}
 
 
 def load_summaries():
@@ -1456,10 +1486,10 @@ def cmd_digest(args):
              "；".join(s.get("key_points") or []))
             for i, s in enumerate(items))
         try:
-            overview = llm.extract_json_loose(llm.llm_chat(
-                prov, model,
+            overview = llm.extract_json_loose(llm_chat_resilient(
+                pname, model,
                 [{"role": "system", "content": OVERVIEW_PROMPT},
-                 {"role": "user", "content": blob}], max_tokens=2000))
+                 {"role": "user", "content": blob}], max_tokens=4000, label="llm"))
         except Exception as exc:
             print("[llm] 综述失败: %s" % exc)
 
@@ -1484,9 +1514,10 @@ def cmd_digest(args):
             continue
         out.append("### %s（%d）\n" % (cat, len(groups[cat])))
         for s in groups[cat]:
-            out.append("**%s**  \n%s ｜ UP：%s ｜ %s ｜ 看到 %.0f%%\n" % (
+            out.append("**%s**  \n%s ｜ UP：%s ｜ %s ｜ 看到 %.0f%% ｜ 素材：%s\n" % (
                 s.get("title"), fmt_time(s.get("view_at")), s.get("author"),
-                "、".join(s.get("topics") or []), (s.get("watch_ratio") or 0) * 100))
+                "、".join(s.get("topics") or []), (s.get("watch_ratio") or 0) * 100,
+                SRC_LABEL.get(s.get("sub_lan"), s.get("sub_lan") or "未知")))
             out.append("%s\n" % s.get("summary"))
             for kp in s.get("key_points") or []:
                 out.append("- %s" % kp)

@@ -8,7 +8,7 @@
 | `llm.py` | LLM 那一层：挑 provider、发起 chat、把回复里的 JSON 抠出来 | bilibili、zhihu |
 | `browser_login.py` | 登录入口的编排：找 node、装 playwright-core、开浏览器、验 cookie | bilibili、zhihu |
 | `login_state.mjs` | 浏览器那一半（Node + playwright）：停在登录页，等你登录完关窗口，把 storageState 存下来 | `browser_login.py` |
-| `sensevoice.py` | 本地语音识别（SenseVoice Small / ONNX int8 / sherpa-onnx），**完全离线** | bilibili、video_analysis |
+| `sensevoice.py` | 本地语音识别（SenseVoice Small / ONNX int8 / sherpa-onnx），**完全离线**；既能 import，也能当独立命令行跑 | bilibili、video_analysis |
 
 ---
 
@@ -73,7 +73,30 @@ ok, why = asr_status(auto=True)                  # 缺运行时/模型会自动�
 wav  = extract_audio(media, "out.wav")           # 任意媒体 → 16k 单声道 wav
 pieces = asr_transcribe(wav, chunk=60)           # [(起始秒, 文本), ...]
 text = asr_to_text(pieces)                       # "[00:12] 你好" 那种逐字稿
+
+spans = asr_transcribe_spans(wav)                # [(起始秒, 结束秒, 文本), ...]
 ```
+
+### 命令行（不用 import，直接跑）
+
+```bash
+python shared/sensevoice.py --download                      # 装运行时 + 下模型（158MB）
+python shared/sensevoice.py --status                        # 看状态（运行时/模型/路径）
+python shared/sensevoice.py --wav a.wav                     # 逐字稿打到屏幕
+python shared/sensevoice.py --wav a.wav --output audacity   # Audacity 标签
+python shared/sensevoice.py --wav a.wav --output audacity --out a.txt
+python shared/sensevoice.py a.mp4 --output srt --out a.srt  # 别的媒体也会自动转码
+```
+
+- `--output` 是**格式**：`text`（逐字稿）、`audacity`、`srt`、`vtt`、`json`；
+  也可以直接给文件名，按扩展名猜格式（`.txt`→audacity 标签，`.srt`/`.vtt`/`.json` 同名）。
+  要写文件就用 `--out 路径`。
+- **Audacity 标签**每行是 `起始秒⇥结束秒⇥文本`（秒、tab 分隔），
+  在 Audacity 里 File → Import → Labels 选这个文件，标签就贴到音轨上了。
+- 其它常用开关：`--chunk 秒`（切块，默认 60，0=整段）、`--threads`、
+  `--seg-max 秒` / `--seg-chars 字`（一句话最长多少，默认 12 秒 / 40 字）、
+  `--no-download`（离线，不许自动装/下载）、`--model 目录` / `--base 目录` / `--url`（换路径/换源）。
+- 进度和统计走 **stderr**，结果走 **stdout**，所以 `> out.txt` 干净可用。
 
 - 速度约 **4 倍实时**（4 线程；57 分钟音频约 12 分钟跑完）。
 - `chunk=60`（秒）按块切，每块留 1 秒重叠——SenseVoice 按 ≤30 秒窗口训练，切块更稳；
@@ -84,3 +107,6 @@ text = asr_to_text(pieces)                       # "[00:12] 你好" 那种逐字
   `tarfile`（`r:bz2`）解压/校验，不依赖系统 tar。
 - 它的老毛病是**同音错字，专有名词错得最狠**（人名几乎全错）。所以给它的下游
   （做总结的 LLM）要明确要求「按上下文改正并用括号标出原词」。
+- SenseVoice 的输出**不带标点**，所以「一句话」是按时间/字数切的
+  （`--seg-max` / `--seg-chars`），边界用 sherpa-onnx 的 **token 级时间戳**定位；
+  块与块那 1 秒重叠会按时间裁掉，不会重复转写。
