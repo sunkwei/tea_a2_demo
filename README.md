@@ -10,7 +10,7 @@
 
 ## 🗂️ 项目总览
 
-这不只是「喵屋便利店」一个项目——仓库里还有 **13 个各自独立**的子项目：
+这不只是「喵屋便利店」一个项目——仓库里还有 **14 个各自独立**的子项目：
 前端可视化、LLM 应用、内容抓取摘要、Godot/Blender 素材一应俱全。
 **完整索引见 [`docs/INDEX.md`](docs/INDEX.md)**（含技术栈、启动方式、依赖关系、脚本速查）。
 
@@ -29,6 +29,7 @@
 | ⑫ | 🎮 GoDot 三国肉鸽 | `GoDot/` | Godot 4 项目 | Godot 打开 |
 | ⑬ | 🏗️ 青岛栈桥建模 | `zhanqiao/` | 真实尺寸 Blender 建模 | 打开 `.blend` |
 | ⑭ | 📼 本地视频分析 | `video_analysis/` | 抽帧拼图 + 本地 ASR → LLM 写分析报告 | `python video_analysis/video_analysis.py <视频文件>` |
+| ⑮ | 🚀 终末地·舰桥观测舱 | `endfield-ship/` | 明日方舟风格飞船内舱 + ARK 风格 HUD（Three.js） | `npm run dev` |
 
 >
 > 三个 LLM 相关应用（便笺 / 划词助手 / 三国杀）默认连本机 `tea_a2`（`http://localhost:8383`）；
@@ -315,3 +316,26 @@ python video_analysis/video_analysis.py xxx.mp4 --merge-only             # 只�
 ```
 
 细节见 [`video_analysis/README.md`](video_analysis/README.md)。
+
+---
+
+## 🚀 附：终末地 · 舰桥观测舱（`endfield-ship/`）
+
+同一仓库里还有一个 **《明日方舟：终末地》风格的飞船内舱场景** —— 泰拉II 轨道中继站「长明号」的舰桥观测舱。
+场景不大（一间舱室），但按 3A 的标准做：PBR 材质、程序化贴图、软阴影、体积光、Bloom + 调色后期；
+最上层是整套 **明日方舟风格 HUD**：斜切面板、角标括号、黄黑警示条、中英双语标签、PRTS 终端。
+
+![终末地·舰桥观测舱](endfield-ship/docs/preview.png)
+
+- 🪐 **舷窗外**：泰拉II 行星（程序化大陆 + 云层 + 晨昏线 + 夜面城市灯）、贯穿行星与轨道的**天梯缆索**、星野与星云
+- 🏗 **舱内**：主控台（三块实时 Canvas 屏幕）、全息战术台、生命维持机柜、货舱闸门、巡检无人机、浮尘与体积光
+- 🖥 **界面**：启动序列、舰体遥测、通讯日志、热点聚焦面板、**可真的敲指令的 PRTS 终端**
+- 🚫 **零外部资源**：所有贴图都是运行时用 Canvas 画出来的，法线贴图由高度图 Sobel 转换
+
+```bash
+npm run test:endfield      # 70 项离线断言（纯 Node）
+npm run endfield:verify    # 46 项无头 Edge 端到端验证 + 截图
+npm run endfield:serve     # http://127.0.0.1:5178/endfield-ship/
+```
+
+细节见 [`endfield-ship/README.md`](endfield-ship/README.md)。

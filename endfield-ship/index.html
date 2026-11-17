@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="终末地 · 舰桥观测舱 —— 明日方舟风格的飞船场景演示" />
+    <title>终末地 · 舰桥观测舱 | ENDFIELD OBSERVATION DECK</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 6 96 30v40L50 94 4 70V30z' fill='none' stroke='%23ffb01f' stroke-width='7'/></svg>"
+    />
+    <!--
+      样式用 link 引入（不是 import），这样不依赖打包器：
+      纯静态服务器也能直接跑。
+    -->
+    <link rel="stylesheet" href="./src/ui/styles.css" />
+    <style>
+      /* CSS 到达前的兜底，避免白屏 */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #05070a;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+    <div id="overlay"></div>
+    <div id="ui"></div>
+
+    <!--
+      importmap：让原生 ESM 直接在浏览器里跑（无需打包）。
+      路径相对于本页，因此用「以仓库根为根」的静态服务器即可：
+        node endfield-ship/tools/serve.mjs  →  http://127.0.0.1:5178/endfield-ship/
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../node_modules/three/build/three.module.js",
+          "three/addons/": "../node_modules/three/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      // 动态导入：失败时给出可读的提示，而不是白屏
+      import('./src/main.js').catch((err) => {
+        console.error(err);
+        const box = document.createElement('div');
+        box.style.cssText =
+          'position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+          'gap:14px;color:#ffb01f;font-family:Consolas,monospace;font-size:13px;text-align:center;padding:24px;line-height:1.9';
+        box.innerHTML =
+          '<div style="font-size:15px;letter-spacing:.3em">终末地 · 舰桥观测舱</div>' +
+          '<div style="color:#8fa0b2">模块加载失败：' +
+          String(err && err.message ? err.message : err) +
+          '</div>' +
+          '<div style="color:#55636f;font-size:11px">请通过本地服务器访问（npm run dev 或 node endfield-ship/tools/serve.mjs），' +
+          'file:// 协议下浏览器会拦截 ES 模块与 importmap。</div>';
+        document.body.appendChild(box);
+      });
+    </script>
+  </body>
+</html>
