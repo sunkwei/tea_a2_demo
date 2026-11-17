@@ -186,6 +186,20 @@ EDGE_PATH=/path/to/chrome node endfield-ship/tools/verify.mjs
 
 ---
 
+## 📊 同提示词横向对比
+
+同一套提示词下，另一个模型（`fable 5.2`）也做了一套舰桥场景：[`tanskeran/starship-deck`](https://github.com/tanskeran/starship-deck)。
+
+两边都**实跑验证**过（同一台机器、同一套无头 Edge），逐维度实测结论见
+**[`docs/starship-deck-comparison.md`](../docs/starship-deck-comparison.md)**。
+
+一句话：它**看起来更像 3A 成品**（光影戏剧性、空间尺度、UI 信息密度、3D 空间热点标签）；
+我这套**更像工程交付**（116 项自动化断言、纯逻辑可离线验证、模块化、零构建可跑）。
+
+两个作品**共同的最大缺口是声音** —— 运行时插桩实测，两个都是零发声。
+
+---
+
 ## 📊 性能
 
 | 指标 | 数值（1600×900） |

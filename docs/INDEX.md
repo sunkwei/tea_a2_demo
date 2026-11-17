@@ -160,4 +160,5 @@ tea_a2_demo/
 ## 📌 相关文档
 
 - [`docs/tea_a2-8282-mechanism-gaps.md`](tea_a2-8282-mechanism-gaps.md) —— tea_a2 机制缺口分析
+- [`docs/starship-deck-comparison.md`](starship-deck-comparison.md) —— 与 starship-deck（fable 5.2）的逐维度对比报告：视觉/渲染/光照/性能/交互/🔊声音/工程验证
 - 各子项目的 `README.md` —— 各自的完整说明与踩坑记录

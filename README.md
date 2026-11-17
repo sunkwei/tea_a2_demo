@@ -339,3 +339,5 @@ npm run endfield:serve     # http://127.0.0.1:5178/endfield-ship/
 ```
 
 细节见 [`endfield-ship/README.md`](endfield-ship/README.md)。
+
+> 📊 **同提示词横向对比**：[`docs/starship-deck-comparison.md`](docs/starship-deck-comparison.md) —— 与 `starship-deck`（fable 5.2）的逐维度实测对比（视觉 / 渲染 / 光照 / 性能 / 交互 / 🔊 声音 / 工程验证）。
