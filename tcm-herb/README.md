@@ -13,7 +13,7 @@
 | 方式 | 操作 | 说明 |
 | --- | --- | --- |
 | **直接双击** | 打开 `tcm-herb/index.html` | `file://` 协议，零依赖零配置，**推荐** |
-| **单文件版** | `npm run tcm:build` 后打开 `tcm-herb/tcm-herb.html` | 图片一起内联（约 26 MB），拷到哪都能用 |
+| **单文件版** | 直接打开 `tcm-herb/tcm-herb.html` | 图片一起内联（约 26 MB），仓库内已带；重新生成用 `npm run tcm:build` |
 | **本地 HTTP（可选）** | `npx serve tcm-herb` 或任意静态服务器 | 与 `file://` 行为一致，便于调试 |
 
 > `file://` 下用**经典 `<script>`** 加载（不用 ES module、不 fetch 本地 JSON），所以双击就能跑。
@@ -112,7 +112,7 @@
 ```
 tcm-herb/
 ├─ index.html                 # 入口（双击即用）
-├─ tcm-herb.html              # 单文件版（npm run tcm:build 生成，已 gitignore）
+├─ tcm-herb.html              # 单文件版（npm run tcm:build 生成，已入库，约 26MB）
 ├─ src/
 │  ├─ data-herbs.js           # 86 味药材
 │  ├─ data-symptoms.js        # 39 个病症（含主/辅药材、搭配、验方、就医提示）
