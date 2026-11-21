@@ -140,7 +140,7 @@
    * 触摸屏上键太窄很难按，这是默认视窗的依据。
    */
   function fitWhiteCount(availableWidth, minKeyWidth) {
-    var min = Math.max(1, num(minKeyWidth, 88));
+    var min = Math.max(1, num(minKeyWidth, 100));
     return clamp(Math.floor(num(availableWidth, 800) / min), 7, ALL_WHITE.length);
   }
 

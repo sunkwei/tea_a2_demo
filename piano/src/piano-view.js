@@ -62,7 +62,7 @@
     songRange: null,
     mode: 'free',
     autoWidth: true,        // true = 白键数随屏幕宽度自适应
-    minKeyWidth: 88,        // 每个白键的最小像素宽度（触摸屏友好）
+    minKeyWidth: 100,       // 每个白键的最小像素宽度（触摸屏友好）
     minVisibleWhite: 1,     // 至少要显示多少个白键（跟弹时曲谱要求的宽度）
     keysDirty: true,
     stageDirty: true,

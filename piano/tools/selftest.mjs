@@ -439,6 +439,8 @@ eq('fitWhiteCount(1250, 88) = 14', Core.fitWhiteCount(1250, 88), 14);
 eq('fitWhiteCount(1250, 100) = 12', Core.fitWhiteCount(1250, 100), 12);
 eq('fitWhiteCount(600, 88) = 7（最少 7 个白键）', Core.fitWhiteCount(600, 88), 7);
 eq('fitWhiteCount(9999, 88) = 52（最多 52 个白键）', Core.fitWhiteCount(9999, 88), 52);
+eq('默认最小键宽 100 → 1252px 装 12 个白键', Core.fitWhiteCount(1252), 12);
+eq('fitWhiteCount(1252, 100) = 12', Core.fitWhiteCount(1252, 100), 12);
 ok('键宽不会小于设定值',
   Math.floor(1250 / Core.fitWhiteCount(1250, 88)) >= 88,
   String(1250 / Core.fitWhiteCount(1250, 88)));
