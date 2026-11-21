@@ -110,6 +110,15 @@ ok('fitRange 覆盖目标音域', Core.allWhiteKeys()[fit.startWhite] <= 60 &&
   Core.allWhiteKeys()[fit.startWhite + fit.whiteCount - 1] >= 72, JSON.stringify(fit));
 ok('fitRange 不越界', fit.startWhite >= 0 && fit.startWhite + fit.whiteCount <= 52);
 
+/* 关键回归：音域最高音不能被切出视窗 */
+[ [36, 69], [60, 84], [21, 108], [48, 60] ].forEach(function (r) {
+  const f = Core.fitRange(r[0], r[1], 52);
+  const lo = Core.allWhiteKeys()[f.startWhite];
+  const hi = Core.allWhiteKeys()[f.startWhite + f.whiteCount - 1];
+  ok('fitRange(' + r[0] + ',' + r[1] + ') 完整覆盖音域',
+    lo <= r[0] && hi >= r[1], lo + '–' + hi);
+});
+
 /* ============================================================ 曲谱 DSL */
 
 console.log('\n【曲谱 DSL 与伴奏】');
@@ -413,7 +422,33 @@ eq('默认曲目', s1.songId, 'twinkle');
 
 const s2 = Core.normalizeSettings(null);
 eq('空设置用默认值', s2.volume, Core.DEFAULT_SETTINGS.volume);
-ok('startWhite 不越界', s2.startWhite >= 0 && s2.startWhite + s2.whiteCount <= 52);
+eq('默认 startWhite = -1（自动居中中央C）', s2.startWhite, -1);
+ok('显式 startWhite 不越界', (() => {
+  const s3 = Core.normalizeSettings({ startWhite: 999, whiteCount: 14 });
+  return s3.startWhite >= 0 && s3.startWhite + s3.whiteCount <= 52;
+})());
+eq('自动居中时 whiteIndexOf(60) 指向中央C', Core.whiteIndexOf(60), 23);
+eq('中央C确实是白键', Core.allWhiteKeys()[Core.whiteIndexOf(60)], 60);
+
+/* ====================================================== 键宽自适应 */
+
+console.log('\n【键宽自适应】');
+
+/* 1280 宽的屏幕：键盘区约 1250px，每个白键至少 88px → 14 个白键 */
+eq('fitWhiteCount(1250, 88) = 14', Core.fitWhiteCount(1250, 88), 14);
+eq('fitWhiteCount(1250, 100) = 12', Core.fitWhiteCount(1250, 100), 12);
+eq('fitWhiteCount(600, 88) = 7（最少 7 个白键）', Core.fitWhiteCount(600, 88), 7);
+eq('fitWhiteCount(9999, 88) = 52（最多 52 个白键）', Core.fitWhiteCount(9999, 88), 52);
+ok('键宽不会小于设定值',
+  Math.floor(1250 / Core.fitWhiteCount(1250, 88)) >= 88,
+  String(1250 / Core.fitWhiteCount(1250, 88)));
+
+const sAuto = Core.normalizeSettings({});
+eq('默认 whiteCount = 0（自适应）', sAuto.whiteCount, 0);
+eq('显式 0 也保持自适应', Core.normalizeSettings({ whiteCount: 0 }).whiteCount, 0);
+eq('显式数字保持不变', Core.normalizeSettings({ whiteCount: 14 }).whiteCount, 14);
+eq('过小的显式值被抬到 7', Core.normalizeSettings({ whiteCount: 3 }).whiteCount, 7);
+eq('过大的显式值被压到 52', Core.normalizeSettings({ whiteCount: 999 }).whiteCount, 52);
 
 /* ========================================================== 汇总 */
 

@@ -42,14 +42,24 @@
     <section class="panel" id="panel" aria-label="练习控制"></section>
 
     <section class="keyboard-area">
-      <div class="minibar"><canvas id="miniCanvas" aria-label="键盘总览"></canvas></div>
+      <div class="minibar">
+        <div class="kbctl" role="group" aria-label="键盘音域">
+          <button type="button" id="kbLeft" title="音域左移一个八度" aria-label="音域左移">◀</button>
+          <button type="button" id="kbRight" title="音域右移一个八度" aria-label="音域右移">▶</button>
+          <button type="button" id="kbZoomOut" title="键变窄（显示更多音）" aria-label="缩小">−</button>
+          <button type="button" id="kbZoomIn" title="键变宽（显示更少音）" aria-label="放大">＋</button>
+          <button type="button" id="kbAuto" title="按屏幕宽度自动调整键宽" aria-label="自适应键宽">适</button>
+        </div>
+        <canvas id="miniCanvas" aria-label="键盘总览"></canvas>
+        <span class="kbrange" id="kbRange">—</span>
+      </div>
       <div class="keys"><canvas id="keysCanvas" aria-label="钢琴键盘"></canvas></div>
     </section>
 
     <footer class="statusbar" id="statusbar">
       <span id="stAudio"><span class="dot"></span>音频</span>
       <span id="stVoice">复音 <b>0</b></span>
-      <span id="stMidi">MIDI <b>未连接</b></span>
+      <button class="linkish" id="stMidi" type="button" title="点击连接 MIDI 输出设备">MIDI 未连接</button>
       <span class="spacer"></span>
       <span id="stHint" class="hintline">多点触摸：多指同时按下即可叠出和弦</span>
     </footer>

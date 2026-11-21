@@ -135,6 +135,15 @@
     return midiToName(layout.lowMidi) + '–' + midiToName(hi);
   }
 
+  /**
+   * 按可用宽度算出「显示多少个白键」，保证每个白键不窄于 minKeyWidth。
+   * 触摸屏上键太窄很难按，这是默认视窗的依据。
+   */
+  function fitWhiteCount(availableWidth, minKeyWidth) {
+    var min = Math.max(1, num(minKeyWidth, 88));
+    return clamp(Math.floor(num(availableWidth, 800) / min), 7, ALL_WHITE.length);
+  }
+
   /** 把一段 midi 区间套进视窗（返回 {startWhite, whiteCount}） */
   function fitRange(lowMidi, highMidi, maxWhite) {
     var wiLow = 0, i;
@@ -143,7 +152,8 @@
     var wiHigh = wiLow;
     while (wiHigh + 1 < ALL_WHITE.length && ALL_WHITE[wiHigh] < highMidi) wiHigh++;
     var need = wiHigh - wiLow + 1;
-    var count = clamp(Math.max(need, 14), 7, Math.min(ALL_WHITE.length, maxWhite || ALL_WHITE.length));
+    /* 左边多留一个白键做余量，宽度也要跟着加 1，否则最高音会掉出视窗 */
+    var count = clamp(Math.max(need + 1, 14), 7, Math.min(ALL_WHITE.length, maxWhite || ALL_WHITE.length));
     var start = clamp(wiLow - 1, 0, ALL_WHITE.length - count);
     return { startWhite: start, whiteCount: count };
   }
@@ -426,8 +436,8 @@
     reverb: 0.3,
     label: 'name',
     velocity: 'touch',      // touch=按触点位置 touch 力度 / fixed=固定力度
-    whiteCount: 24,
-    startWhite: 12,
+    whiteCount: 0,          // 0 = 自动（按屏幕宽度算，键更宽）
+    startWhite: -1,         // -1 = 以中央 C 为中心
     pedal: false,
     metro: false,
     bpm: 92,
@@ -459,8 +469,12 @@
     s.reverb = clamp(num(s.reverb, 0.3), 0, 1);
     s.label = ['name', 'solfege', 'jianpu', 'none'].indexOf(s.label) >= 0 ? s.label : 'name';
     s.velocity = s.velocity === 'fixed' ? 'fixed' : 'touch';
-    s.whiteCount = clamp(Math.round(num(s.whiteCount, 24)), 7, ALL_WHITE.length);
-    s.startWhite = clamp(Math.round(num(s.startWhite, 12)), 0, ALL_WHITE.length - s.whiteCount);
+    /* whiteCount = 0 表示「自动」：按屏幕宽度自适应，保证键够宽 */
+    s.whiteCount = clamp(Math.round(num(s.whiteCount, 0)), 0, ALL_WHITE.length);
+    if (s.whiteCount > 0) s.whiteCount = clamp(s.whiteCount, 7, ALL_WHITE.length);
+    /* startWhite = -1 表示「以中央 C 为中心」（默认，视窗随键宽自适应） */
+    s.startWhite = Math.round(num(s.startWhite, -1));
+    if (s.startWhite >= 0) s.startWhite = clamp(s.startWhite, 0, ALL_WHITE.length - s.whiteCount);
     s.pedal = !!s.pedal;
     s.metro = !!s.metro;
     s.bpm = clamp(Math.round(num(s.bpm, 92)), 30, 240);
@@ -496,6 +510,11 @@
     nameToMidi: nameToMidi, noteLabel: noteLabel,
     whiteKeys: whiteKeys, allWhiteKeys: allWhiteKeys,
     layoutKeyboard: layoutKeyboard, hitTestKey: hitTestKey, keyCenter: keyCenter,
+    fitWhiteCount: fitWhiteCount,
+    whiteIndexOf: function (midi) {
+      for (var i = 0; i < ALL_WHITE.length; i++) if (ALL_WHITE[i] >= midi) return i;
+      return ALL_WHITE.length - 1;
+    },
     rangeLabel: rangeLabel, fitRange: fitRange,
     parseMelody: parseMelody, parseChord: parseChord, chordVoicing: chordVoicing,
     accompaniment: accompaniment, compileSong: compileSong, lintSong: lintSong,

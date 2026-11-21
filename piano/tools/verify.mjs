@@ -48,7 +48,8 @@ async function main() {
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
+  /* 目标机（触屏笔记本）真实分辨率 1280x720 —— 用它验证键宽是否够按 */
+  await page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1 });
 
   const errors = [];
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
@@ -56,6 +57,17 @@ async function main() {
     if (msg.type() === 'error') {
       const t = msg.text();
       if (!/Failed to load resource/i.test(t)) errors.push('console: ' + t);
+    }
+  });
+
+  /* 拦下 requestMIDIAccess：启动时不应该申请 MIDI 权限（会弹框挡住界面） */
+  await page.evaluateOnNewDocument(() => {
+    window.__midiAsked = 0;
+    if (navigator.requestMIDIAccess) {
+      navigator.requestMIDIAccess = function () {
+        window.__midiAsked++;
+        return Promise.resolve({ outputs: { forEach: function () {} } });
+      };
     }
   });
 
@@ -91,8 +103,72 @@ async function main() {
   });
   check('视窗内键盘命中正确', layoutInfo.hits.every(h => h.hit === h.midi),
     JSON.stringify(layoutInfo.hits));
-  check('视窗包含中央 C 区域', layoutInfo.low <= 60 && layoutInfo.high >= 72,
+  check('视窗包含中央 C（自适应后以中央C为中心）',
+    layoutInfo.low <= 60 && layoutInfo.high >= 60,
     layoutInfo.low + '–' + layoutInfo.high);
+
+  /* ------------------------------------------------------- 键宽 */
+
+  const keySize = await page.evaluate(() => {
+    const vp = window.__piano.viewport();
+    const keysC = document.getElementById('keysCanvas');
+    return {
+      whiteKeyWidth: vp.whiteKeyWidth,
+      whiteCount: vp.whiteCount,
+      autoWidth: vp.autoWidth,
+      canvasWidth: keysC.getBoundingClientRect().width
+    };
+  });
+  check('默认键宽自适应（不是固定 24 个白键）', keySize.autoWidth === true,
+    'autoWidth=' + keySize.autoWidth);
+  check('每个白键宽度 ≥ 80px（触摸屏好按）', keySize.whiteKeyWidth >= 80,
+    keySize.whiteKeyWidth.toFixed(1) + 'px');
+  check('白键数随屏幕宽度自适应', keySize.whiteCount < 24 && keySize.whiteCount >= 7,
+    String(keySize.whiteCount));
+
+  check('启动时不申请 MIDI 权限（不弹授权框）',
+    (await page.evaluate(() => window.__midiAsked)) === 0,
+    String(await page.evaluate(() => window.__midiAsked)));
+  const midiText = await page.evaluate(() => document.getElementById('stMidi').textContent);
+  check('MIDI 显示为「点击连接」而非已连接', /未连接|无输出|未授权/.test(midiText), midiText);
+
+  /* 缩放控件：＋ 让键变宽，− 让键变窄，自适应按钮能恢复 */
+  const zoom = await page.evaluate(() => {
+    const P = window.__piano;
+    const before = P.viewport().whiteKeyWidth;
+    const beforeCount = P.viewport().whiteCount;
+    document.getElementById('kbZoomIn').click();
+    const wider = P.viewport();
+    document.getElementById('kbZoomOut').click();
+    const narrower = P.viewport();
+    document.getElementById('kbAuto').click();
+    const auto = P.viewport();
+    return {
+      before: before, beforeCount: beforeCount,
+      widerW: wider.whiteKeyWidth, widerCount: wider.whiteCount,
+      narrowerW: narrower.whiteKeyWidth, narrowerCount: narrower.whiteCount,
+      autoW: auto.whiteKeyWidth, autoCount: auto.whiteCount
+    };
+  });
+  check('点「＋」键变宽（可见白键变少）',
+    zoom.widerW > zoom.before && zoom.widerCount < zoom.beforeCount, JSON.stringify(zoom));
+  check('点「−」键变窄（可见白键变多）',
+    zoom.narrowerCount > zoom.widerCount, JSON.stringify(zoom));
+  check('点「适」恢复自适应', zoom.autoCount === zoom.beforeCount && zoom.autoW === zoom.before,
+    JSON.stringify(zoom));
+
+  /* 音域左右移动 */
+  const pan = await page.evaluate(() => {
+    const P = window.__piano;
+    const before = P.viewport().startWhite;
+    document.getElementById('kbRight').click();
+    const right = P.viewport().startWhite;
+    document.getElementById('kbLeft').click();
+    const back = P.viewport().startWhite;
+    return { before, right, back };
+  });
+  check('音域可左右移动一个八度', pan.right === pan.before + 7 && pan.back === pan.before,
+    JSON.stringify(pan));
 
   await page.screenshot({ path: path.join(SHOTS, '01-free.png') });
 

@@ -61,6 +61,9 @@
     onNoteOn: null, onNoteOff: null, onViewport: null,
     songRange: null,
     mode: 'free',
+    autoWidth: true,        // true = 白键数随屏幕宽度自适应
+    minKeyWidth: 88,        // 每个白键的最小像素宽度（触摸屏友好）
+    minVisibleWhite: 1,     // 至少要显示多少个白键（跟弹时曲谱要求的宽度）
     keysDirty: true,
     stageDirty: true,
     miniDirty: true
@@ -132,6 +135,15 @@
   };
 
   View.recompute = function () {
+    if (View.autoWidth) {
+      var want = Math.max(Core.fitWhiteCount(View.width, View.minKeyWidth), View.minVisibleWhite);
+      if (want !== View.whiteCount) {
+        /* 保持视窗中心不变，只改可见白键数 */
+        var center = View.startWhite + View.whiteCount / 2;
+        View.whiteCount = want;
+        View.startWhite = clamp(Math.round(center - want / 2), 0, Core.allWhiteKeys().length - want);
+      }
+    }
     View.layout = Core.layoutKeyboard({
       width: View.width,
       height: View.height,
@@ -142,10 +154,12 @@
 
   /* --------------------------------------------------------- 视窗控制 */
 
+  /** whiteCount 传 null = 保持当前数量；传数字 = 显式指定并关闭自适应 */
   View.setViewport = function (startWhite, whiteCount) {
     var all = Core.allWhiteKeys();
     if (whiteCount != null) {
       View.whiteCount = clamp(Math.round(whiteCount), 7, all.length);
+      View.autoWidth = false;
     }
     View.startWhite = clamp(Math.round(startWhite), 0, all.length - View.whiteCount);
     View.recompute();
@@ -162,7 +176,67 @@
   };
 
   View.scrollBy = function (deltaWhite) {
-    View.setViewport(View.startWhite + deltaWhite, View.whiteCount);
+    View.setViewport(View.startWhite + deltaWhite, null);
+  };
+
+  /** 打开/关闭「键宽自适应」 */
+  View.setAutoWidth = function (on) {
+    View.autoWidth = !!on;
+    if (View.autoWidth) View.applyAutoWidth();
+    else View.keysDirty = View.miniDirty = true;
+    return View.autoWidth;
+  };
+
+  /** 按当前宽度重算白键数（保持中心） */
+  View.applyAutoWidth = function () {
+    View.recompute();
+    View.keysDirty = View.miniDirty = View.stageDirty = true;
+  };
+
+  /** 设定「至少要显示多少个白键」（跟弹时用来保证整首曲子装得下） */
+  View.setMinVisibleWhite = function (n) {
+    View.minVisibleWhite = Math.max(1, Math.round(n) || 1);
+    View.recompute();
+    View.keysDirty = View.miniDirty = View.stageDirty = true;
+  };
+
+  /** 缩放视窗：delta 为负 = 键更宽（可见白键更少），为正 = 键更窄 */
+  View.zoomBy = function (delta) {
+    var all = Core.allWhiteKeys();
+    var want = clamp(View.whiteCount + delta, 7, all.length);
+    var center = View.startWhite + View.whiteCount / 2;
+    View.autoWidth = false;
+    View.whiteCount = want;
+    View.startWhite = clamp(Math.round(center - want / 2), 0, all.length - want);
+    View.recompute();
+    View.keysDirty = View.miniDirty = View.stageDirty = true;
+    return View.whiteCount;
+  };
+
+  /** 左右移动一个八度（7 个白键） */
+  View.scrollOctave = function (dir) {
+    View.setViewport(View.startWhite + dir * 7, null);
+  };
+
+  /** 保证 [loMidi, hiMidi] 这一段都落在视窗里（和弦练习用） */
+  View.revealRange = function (loMidi, hiMidi) {
+    var all = Core.allWhiteKeys();
+    var a = Core.whiteIndexOf(loMidi);
+    var b = Core.whiteIndexOf(hiMidi);
+    if (a >= View.startWhite && b <= View.startWhite + View.whiteCount - 1) return false;
+    var need = b - a + 1;
+    if (need <= View.whiteCount) {
+      View.setViewport(clamp(a - 1, 0, all.length - View.whiteCount), null);
+    } else {
+      /* 一屏放不下，就以低音为中心 */
+      View.setViewport(a - Math.floor(View.whiteCount / 2), null);
+    }
+    return true;
+  };
+
+  /** 当前每个白键的实际像素宽度 */
+  View.whiteKeyWidth = function () {
+    return View.layout ? View.layout.whiteW : 0;
   };
 
   View.zoom = function (delta) {
@@ -173,8 +247,20 @@
   };
 
   View.fitRange = function (lowMidi, highMidi) {
-    var f = Core.fitRange(lowMidi, highMidi, Core.allWhiteKeys().length);
-    View.setViewport(f.startWhite, f.whiteCount);
+    var all = Core.allWhiteKeys();
+    var f = Core.fitRange(lowMidi, highMidi, all.length);
+    if (View.autoWidth) {
+      /* 自适应模式下：宽度按屏幕算，但至少要装得下整首曲子；
+         起点要落在 f.startWhite，否则最高音会掉出视窗 */
+      var want = Math.max(Core.fitWhiteCount(View.width, View.minKeyWidth), f.whiteCount);
+      View.minVisibleWhite = f.whiteCount;
+      View.whiteCount = want;
+      View.startWhite = clamp(f.startWhite, 0, all.length - want);
+      View.recompute();
+    } else {
+      View.setViewport(f.startWhite, Math.max(f.whiteCount, View.whiteCount));
+    }
+    View.keysDirty = View.miniDirty = View.stageDirty = true;
   };
 
   /** 把某个 midi 滚进当前视窗（已在视窗内则不动） */
@@ -184,7 +270,7 @@
     for (i = 0; i < all.length; i++) { if (all[i] >= midi) { wi = i; break; } }
     if (wi < 0) wi = all.length - 1;
     if (wi >= View.startWhite && wi < View.startWhite + View.whiteCount) return false;
-    View.setViewport(wi - Math.floor(View.whiteCount / 2), View.whiteCount);
+    View.setViewport(wi - Math.floor(View.whiteCount / 2), null);
     return true;
   };
 

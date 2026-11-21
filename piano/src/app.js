@@ -211,28 +211,37 @@
 
   /* --------------------------------------------------------- MIDI */
 
+  /* 不在启动时调用 requestMIDIAccess —— 浏览器会弹权限框挡住界面。
+     改成用户点状态栏的 MIDI 文字才申请。 */
   function initMidi() {
     if (!navigator.requestMIDIAccess) {
-      elStMidi.innerHTML = 'MIDI <b>浏览器不支持</b>';
+      elStMidi.textContent = 'MIDI 不支持';
+      elStMidi.disabled = true;
       return;
     }
+    elStMidi.textContent = 'MIDI 未连接（点击连接）';
+  }
+
+  function connectMidi() {
+    if (!navigator.requestMIDIAccess) { toast('此浏览器不支持 MIDI 输出'); return; }
+    elStMidi.textContent = 'MIDI 连接中…';
     navigator.requestMIDIAccess().then(function (access) {
       function pick() {
         var outs = [];
         access.outputs.forEach(function (o) { outs.push(o); });
         if (!outs.length) {
-          elStMidi.innerHTML = 'MIDI <b>无输出设备</b>';
+          elStMidi.textContent = 'MIDI 无输出设备';
           midiOut = null;
           return;
         }
         midiOut = outs[0];
         outs.forEach(function (o) { o.onstatechange = pick; });
-        elStMidi.innerHTML = 'MIDI <b>' + (midiOut.name || '已连接') + '</b>';
+        elStMidi.textContent = 'MIDI ' + (midiOut.name || '已连接');
       }
       access.onstatechange = pick;
       pick();
     }).catch(function () {
-      elStMidi.innerHTML = 'MIDI <b>未授权</b>';
+      elStMidi.textContent = 'MIDI 未授权';
     });
   }
 
@@ -791,9 +800,7 @@
       var sig = lo + '-' + hi;
       if (sig !== lastChordKey) {
         lastChordKey = sig;
-        View.revealMidi(lo);
-        /* 跨太宽的和弦再把高音也带进来 */
-        if (hi - lo > 12) View.revealMidi(hi);
+        View.revealRange(lo, hi);
       }
     }
     var hints = {};
@@ -1056,6 +1063,39 @@
     }
   }
 
+  /* ------------------------------------------------- 键盘音域控件 */
+
+  function updateKbRange() {
+    var box = $('kbRange');
+    if (!box || !View.layout) return;
+    box.textContent = Core.rangeLabel(View.layout) + '（' + View.whiteCount + ' 个白键）';
+    var auto = $('kbAuto');
+    if (auto) auto.setAttribute('aria-pressed', String(View.autoWidth));
+  }
+
+  function bindKeyboardControls() {
+    $('kbLeft').addEventListener('click', function () { View.scrollOctave(-1); updateKbRange(); });
+    $('kbRight').addEventListener('click', function () { View.scrollOctave(1); updateKbRange(); });
+    /* ＋= 键变宽（显示更少白键），−= 键变窄（显示更多白键） */
+    $('kbZoomIn').addEventListener('click', function () {
+      View.zoomBy(-3); settings.whiteCount = View.whiteCount; saveSettings(); updateKbRange();
+    });
+    $('kbZoomOut').addEventListener('click', function () {
+      View.zoomBy(3); settings.whiteCount = View.whiteCount; saveSettings(); updateKbRange();
+    });
+    $('kbAuto').addEventListener('click', function () {
+      var on = View.setAutoWidth(!View.autoWidth);
+      settings.whiteCount = on ? 0 : View.whiteCount;
+      saveSettings();
+      updateKbRange();
+      toast(on ? '键宽：按屏幕自适应' : '键宽：固定 ' + View.whiteCount + ' 个白键');
+    });
+    $('stMidi').addEventListener('click', function () {
+      if (midiOut) { toast('MIDI 已连接：' + (midiOut.name || '')); return; }
+      connectMidi();
+    });
+  }
+
   /* --------------------------------------------------------- 顶栏 */
 
   $('recordBtn').addEventListener('click', toggleRecord);
@@ -1092,6 +1132,10 @@
     window.removeEventListener('pointerdown', once);
   }, { passive: true });
 
+  window.addEventListener('resize', function () {
+    if (View.autoWidth) View.applyAutoWidth();
+  });
+
   document.addEventListener('visibilitychange', function () {
     if (document.hidden && sessionKind === 'song' && session && session.state === 'playing') {
       session.pause();
@@ -1116,11 +1160,26 @@
     },
     onViewport: function (vp) {
       $('stHint').textContent = '可视音域 ' + vp.label + '（' + vp.whiteCount + ' 个白键）';
+      updateKbRange();
     }
   });
 
-  View.setViewport(settings.startWhite, settings.whiteCount);
+  /* whiteCount = 0 → 自适应：按屏幕宽度算，保证每个白键够宽好按 */
+  if (settings.whiteCount > 0) {
+    View.setAutoWidth(false);
+    View.setViewport(settings.startWhite, settings.whiteCount);
+  } else {
+    View.setAutoWidth(true);
+    View.setViewport(settings.startWhite, null);
+    View.applyAutoWidth();
+  }
+  /* startWhite = -1 → 视窗以中央 C 为中心 */
+  if (settings.startWhite < 0) {
+    View.setViewport(Core.whiteIndexOf(60) - Math.floor(View.whiteCount / 2), null);
+  }
   View.setLabelStyle(settings.label);
+  bindKeyboardControls();
+  updateKbRange();
   buildPanel();
   updateStageState();
   initMidi();
@@ -1161,15 +1220,32 @@
     setSettings: function (patch) {
       Object.assign(settings, patch);
       saveSettings();
-      View.setViewport(settings.startWhite, settings.whiteCount);
+      if (settings.whiteCount > 0) {
+        View.setAutoWidth(false);
+        View.setViewport(settings.startWhite, settings.whiteCount);
+      } else {
+        View.setAutoWidth(true);
+        View.setViewport(settings.startWhite, null);
+        View.applyAutoWidth();
+      }
+      if (settings.startWhite < 0) {
+        View.setViewport(Core.whiteIndexOf(60) - Math.floor(View.whiteCount / 2), null);
+      }
       View.setLabelStyle(settings.label);
       buildPanel();
+      updateKbRange();
     },
     settings: function () { return settings; },
     keyCenter: function (midi) { return Core.keyCenter(View.layout, midi); },
     hitTest: function (x, y) { return View.hitTest(x, y); },
     viewport: function () {
-      return { startWhite: View.startWhite, whiteCount: View.whiteCount };
-    }
+      return {
+        startWhite: View.startWhite, whiteCount: View.whiteCount,
+        whiteKeyWidth: View.whiteKeyWidth(), autoWidth: View.autoWidth
+      };
+    },
+    zoomBy: function (d) { var n = View.zoomBy(d); settings.whiteCount = n; saveSettings(); updateKbRange(); return n; },
+    setAutoWidth: function (on) { var r = View.setAutoWidth(on); settings.whiteCount = on ? 0 : View.whiteCount; saveSettings(); updateKbRange(); return r; },
+    scrollOctave: function (d) { View.scrollOctave(d); updateKbRange(); }
   };
 })();

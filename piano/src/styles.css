@@ -343,21 +343,62 @@ input[type="checkbox"] { accent-color: var(--accent); }
 
 .minibar {
   position: relative;
-  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
   padding: 0 14px;
 }
 .minibar canvas {
   display: block;
-  width: 100%;
-  height: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 22px;
   cursor: ew-resize;
   touch-action: none;
   border-radius: 4px;
 }
 
+/* 键盘音域控件：左移 / 右移 / 变窄 / 变宽 / 自适应 */
+.kbctl {
+  display: flex;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.kbctl button {
+  appearance: none;
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.kbctl button:hover { border-color: var(--accent); color: var(--ink); }
+.kbctl button:active { background: var(--accent); color: var(--accent-ink); }
+.kbctl button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.kbctl #kbAuto { width: 30px; font-size: 11px; }
+
+.kbrange {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .keys {
   position: relative;
-  height: clamp(140px, 24vh, 220px);
+  height: clamp(150px, 30vh, 260px);
   padding: 0 14px 8px;
 }
 .keys canvas {
@@ -395,6 +436,18 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .statusbar .dot.on { background: #37b26a; }
 .statusbar .dot.off { background: #c9584f; }
 .statusbar .spacer { margin-left: auto; }
+
+.linkish {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-bottom: 1px dashed currentColor;
+}
+.linkish:hover { color: var(--accent); }
 .statusbar.beat { color: var(--accent); }
 
 /* ------------------------------------------------------------ 浮层 */
@@ -504,9 +557,12 @@ input[type="checkbox"] { accent-color: var(--accent); }
   .panel { gap: 6px 10px; padding: 6px 10px; }
   .field { font-size: 12px; }
   select, .btn { font-size: 12px; padding: 5px 9px; }
-  .keys { height: clamp(120px, 22vh, 170px); padding: 0 8px 6px; }
-  .minibar { padding: 0 8px; }
+  .keys { height: clamp(130px, 26vh, 200px); padding: 0 8px 6px; }
+  .minibar { padding: 0 8px; gap: 5px; }
   .stage { padding: 0 8px; }
+  .kbctl button { width: 24px; height: 22px; }
+  .kbctl #kbAuto { width: 26px; }
+  .kbrange { font-size: 11px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
