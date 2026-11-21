@@ -43,7 +43,9 @@
     "endfield:verify": "node endfield-ship/tools/verify.mjs",
     "endfield:lint": "node endfield-ship/tools/lint.mjs",
     "endfield:serve": "node endfield-ship/tools/serve.mjs",
-    "endfield:shoot": "node endfield-ship/tools/shoot.mjs"
+    "endfield:shoot": "node endfield-ship/tools/shoot.mjs",
+    "test:piano": "node piano/tools/selftest.mjs",
+    "piano:verify": "node piano/tools/verify.mjs"
   },
   "keywords": [
     "three.js",
@@ -57,7 +59,11 @@
     "hls",
     "sticky-notes",
     "localstorage",
-    "offline"
+    "offline",
+    "piano",
+    "multitouch",
+    "web-audio",
+    "midi"
   ],
   "license": "MIT",
   "dependencies": {

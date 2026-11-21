@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="color-scheme" content="light dark" />
+  <title>琴房 · 钢琴练习</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B9%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">🎹</span>
+        <span>琴房</span>
+        <span class="sub">多点触摸钢琴练习</span>
+      </div>
+
+      <nav class="tabs" id="tabs" role="tablist" aria-label="练习模式">
+        <button class="tab" role="tab" data-mode="free" aria-selected="true">自由弹奏</button>
+        <button class="tab" role="tab" data-mode="song" aria-selected="false">跟弹练习</button>
+        <button class="tab" role="tab" data-mode="note" aria-selected="false">认键练习</button>
+        <button class="tab" role="tab" data-mode="harmony" aria-selected="false">音阶和弦</button>
+      </nav>
+
+      <div class="top-actions">
+        <button class="icon-btn" id="recordBtn" type="button" title="录制 / 回放 (R)" aria-label="录制或回放">●</button>
+        <button class="icon-btn" id="helpBtn" type="button" title="帮助" aria-label="帮助">?</button>
+        <button class="icon-btn" id="themeBtn" type="button" title="切换深浅色" aria-label="切换深浅色">◐</button>
+      </div>
+    </header>
+
+    <main class="stage" id="stage">
+      <canvas id="stageCanvas"></canvas>
+      <div class="hud" id="hud" aria-live="polite"></div>
+      <div class="judge" id="judge" aria-hidden="true"></div>
+      <div class="countdown" id="countdown" hidden></div>
+      <div class="progress" id="progress" hidden><i></i></div>
+    </main>
+
+    <section class="panel" id="panel" aria-label="练习控制"></section>
+
+    <section class="keyboard-area">
+      <div class="minibar"><canvas id="miniCanvas" aria-label="键盘总览"></canvas></div>
+      <div class="keys"><canvas id="keysCanvas" aria-label="钢琴键盘"></canvas></div>
+    </section>
+
+    <footer class="statusbar" id="statusbar">
+      <span id="stAudio"><span class="dot"></span>音频</span>
+      <span id="stVoice">复音 <b>0</b></span>
+      <span id="stMidi">MIDI <b>未连接</b></span>
+      <span class="spacer"></span>
+      <span id="stHint" class="hintline">多点触摸：多指同时按下即可叠出和弦</span>
+    </footer>
+  </div>
+
+  <div class="overlay" id="overlay" hidden></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="src/core.js"></script>
+  <script src="src/songs.js"></script>
+  <script src="src/practice.js"></script>
+  <script src="src/audio.js"></script>
+  <script src="src/piano-view.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>
