@@ -14,6 +14,7 @@ sticky-notes/tools/shots/
 tcm-herb/tools/shots/
 rubiks-cube/tools/shots/
 endfield-ship/tools/shots/
+piano/tools/shots/
 sticky-notes/sticky-notes.html
 # tcm-herb/tcm-herb.html 为生成的单文件版，按用户要求入库（约 26MB）
 # tea_agent 运行目录（会话记录 / 工具 / 临时文件，不入库）
