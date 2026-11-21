@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" role="img" aria-label="桑寄生示意图">
+  <rect width="120" height="90" fill="#e8e0cd"/>
+  <circle cx="60" cy="40" r="20" fill="none" stroke="#2f6b57" stroke-width="2"/>
+  <path d="M60 24v32M44 40h32" stroke="#2f6b57" stroke-width="2"/>
+  <text x="60" y="80" font-size="13" text-anchor="middle" fill="#2f6b57" font-family="serif">桑 · 示意图</text>
+</svg>

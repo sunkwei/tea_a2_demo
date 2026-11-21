@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="中药大全：常用中药材图鉴、按病症查药材与配伍、历史验方、模糊查询与查询历史。仅供中医科普学习参考。" />
+  <title>中药大全 · 常用中药材图鉴</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <a class="skip" href="#view">跳到内容</a>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">🌿</span>
+        <div class="brand-text">
+          <h1>中药大全</h1>
+          <p class="sub">常用中药材 · 按病症查药 · 历史验方</p>
+        </div>
+      </div>
+      <button id="themeBtn" class="icon-btn" type="button" aria-label="切换深浅色" title="切换深浅色">◐</button>
+    </header>
+
+    <div class="search-wrap">
+      <form id="searchForm" class="searchbar" role="search" autocomplete="off">
+        <span class="search-ico" aria-hidden="true">🔍</span>
+        <input id="q" name="q" type="search" enterkeyhint="search"
+               placeholder="药材 / 拼音首字母(如 gc) / 病症 / 功效"
+               aria-label="搜索药材、病症或功效" />
+        <button class="primary" type="submit">搜索</button>
+      </form>
+      <div id="history" class="history" hidden aria-label="最近查询"></div>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="主导航">
+      <button class="tab" type="button" data-tab="herbs" role="tab">药材图鉴</button>
+      <button class="tab" type="button" data-tab="symptoms" role="tab">按病症</button>
+      <button class="tab" type="button" data-tab="formulas" role="tab">历史验方</button>
+    </nav>
+
+    <main id="view" class="view" tabindex="-1"></main>
+
+    <footer class="footer">
+      <p class="disclaim">
+        <strong>⚠️ 免责声明</strong>：本应用仅供中医科普学习参考，<b>不构成诊疗建议</b>，
+        不能替代医师面诊与处方。用药请遵医嘱或咨询执业药师；孕妇、儿童、慢性病与正在服药者尤其应先问医生。
+        验方仅列组成与主治，<b>不提供剂量与煎服法</b>。
+      </p>
+      <p class="meta">
+        文字整理自药典公开条目与公有领域古籍；图片来自 Wikimedia Commons，逐张标注作者与许可。
+        发现错误欢迎指出，一切以最新版《中国药典》与医师意见为准。
+      </p>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <div id="dialog" class="dialog" hidden></div>
+
+  <script src="assets/herbs/sources.js"></script>
+  <script src="src/data-herbs.js"></script>
+  <script src="src/data-symptoms.js"></script>
+  <script src="src/data-formulas.js"></script>
+  <script src="src/core.js"></script>
+  <script src="src/storage.js"></script>
+  <script src="src/online.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>
