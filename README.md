@@ -174,6 +174,20 @@
 
 ---
 
+## 🧾 用户输入（原始需求）
+
+每个项目目录下除了 `README.md`，还有一份 **`PROMPT.md`**：它当初是怎么被要求做出来的、后来又改了什么，
+按时间列出**用户输入原文**——已剔除「继续」「嗯」「提交,推送」这类没有信息量的指令、纯夸奖句，以及工具回填的系统消息。
+
+- **已留档**：🐱 `meow-mart/`、🦊 `tea-select/`、📺 `bilibili/`、🏺 `pottery/`
+- **未留档**：2026-11-02 / 11-03 建的那批（贪吃蛇、便笺、魔方、IPTV、终末地、AI 小镇、三国杀、中药、栈桥、Godot…）——
+  那时的会话已随工作区清理，只剩 git 提交信息；补录办法见 [`docs/PROMPTS.md`](docs/PROMPTS.md)
+
+收录条数、仓库级输入与过滤规则都在 [`docs/PROMPTS.md`](docs/PROMPTS.md)；
+重新生成：`npm run prompts:build`（扫描 `.tea_agent_run/sessions/`，过滤后按项目写回 `PROMPT.md`）。
+
+---
+
 ## 🚀 快速开始
 
 ```bash
@@ -242,6 +256,7 @@ npm run preview    # 本地预览构建结果
 | `npm run test:endfield` · `npm run endfield:verify` · `npm run endfield:serve` | 终末地断言 · 端到端 · 本地服务器 |
 | `npm run sgss:web` · `npm run test:sgss` · `npm run sgss:doctor` | 三国杀网页版 · pytest · 环境自检 |
 | `npm run index:build` | 重生成 17 张横幅（`docs/banners/`）+ 根目录索引页 |
+| `npm run prompts:build` | 从会话记录抽取用户输入 → 各项目 `PROMPT.md` + `docs/PROMPTS.md` |
 
 ---
 
@@ -254,9 +269,13 @@ tea_a2_demo/
 ├── package.json               # 全仓库的脚本入口
 ├── docs/
 │   ├── INDEX.md               # 全仓库索引（技术栈 / 依赖 / 自测约定）
+│   ├── PROMPTS.md             # 用户输入归档总表（哪些项目留了原始需求）
 │   └── banners/               # 17 张项目横幅 SVG（npm run index:build 生成）
-├── tools/gen-project-index.mjs # 横幅 + 落地索引页生成器（改文案改这里）
+├── tools/
+│   ├── gen-project-index.mjs   # 横幅 + 落地索引页生成器（改文案改这里）
+│   └── collect-prompts.mjs     # 会话记录 → 各项目 PROMPT.md
 ├── meow-mart/                 # 🐱 喵屋便利店（Three.js 程序化雨夜小镇）
+│                              #    每个项目目录里还有 PROMPT.md（用户输入原文）
 ├── endfield-ship/             # 🚀 终末地 · 舰桥观测舱
 ├── snake-race/                # 🐍 贪吃蛇竞赛
 ├── attention-film/            # 🎬 Self-Attention 短片

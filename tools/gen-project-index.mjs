@@ -234,11 +234,14 @@ function bannerSvg(p) {
 
 // ───────────────────────────── 落地页 ─────────────────────────────
 
+const hasPrompt = (p) => fs.existsSync(path.join(ROOT, p.dir, 'PROMPT.md'));
+
 const cardHtml = (p) => {
   const primary = p.web
     ? `<a class="go" href="${p.web}">打开 →</a>`
     : `<a class="go" href="${p.dir}README.md">看用法 →</a>`;
   const secondary = p.web ? `<a class="doc" href="${p.dir}README.md">说明</a>` : '';
+  const prompt = hasPrompt(p) ? `<a class="doc" href="${p.dir}PROMPT.md">输入</a>` : '';
   const tags = p.tags.map((t) => `<span>${esc(t)}</span>`).join('');
   const search = (p.cn + ' ' + p.en + ' ' + p.tagline + ' ' + p.dir + ' ' + p.tags.join(' ')).toLowerCase();
   return `      <article class="card" data-cat="${p.cat}" data-search="${esc(search)}">
@@ -249,7 +252,7 @@ const cardHtml = (p) => {
           <div class="foot">
             <code>${esc(p.dir)}</code>
             <span class="run">${esc(p.run)}</span>
-            ${primary}${secondary}
+            ${primary}${secondary}${prompt}
           </div>
         </div>
       </article>`;

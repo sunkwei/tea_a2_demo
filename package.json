@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "index:build": "node tools/gen-project-index.mjs",
+    "prompts:build": "node tools/collect-prompts.mjs",
     "test:snake": "node snake-race/tools/selftest.mjs",
     "bench:snake": "node snake-race/tools/bench.mjs 60 3000 4",
     "bench:snake:head": "node snake-race/tools/bench.mjs 200",

@@ -149,6 +149,7 @@ tea_a2_demo/
 ├── index.html                # 🎪 项目索引落地页（横幅 + 筛选 + 搜索）
 ├── vite.config.js  package.json
 ├── docs/banners/             # 17 张项目横幅 SVG（npm run index:build 生成）
+├── docs/PROMPTS.md           # 用户输入归档总表（npm run prompts:build 生成）
 ├── tools/gen-project-index.mjs  # 横幅 + 索引页生成器
 ├── meow-mart/                # ① 喵屋便利店（Three.js）
 ├── snake-race/               # ② 贪吃蛇竞赛
@@ -171,8 +172,17 @@ tea_a2_demo/
 
 ---
 
+## 🧾 每个项目的用户输入
+
+每个项目目录下的 **`PROMPT.md`** 记着它当初是怎么被要求做出来的（用户输入原文，已剔除「继续」「提交,推送」这类无效指令）。
+已留档：`meow-mart/`、`tea-select/`、`bilibili/`、`pottery/`；早期项目的会话已清理，只有 git 提交信息。
+总表与过滤规则见 [`PROMPTS.md`](PROMPTS.md)，重新生成用 `npm run prompts:build`。
+
+---
+
 ## 📌 相关文档
 
+- [`docs/PROMPTS.md`](PROMPTS.md) —— 用户输入归档总表（各项目 `PROMPT.md` 的索引）
 - [`docs/tea_a2-8282-mechanism-gaps.md`](tea_a2-8282-mechanism-gaps.md) —— tea_a2 机制缺口分析
 - [`docs/starship-deck-comparison.md`](starship-deck-comparison.md) —— 与 starship-deck（fable 5.2）的逐维度对比报告：视觉/渲染/光照/性能/交互/🔊声音/工程验证
 - 各子项目的 `README.md` —— 各自的完整说明与踩坑记录
