@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="168" viewBox="0 0 640 168" role="img" aria-label="AI 小镇：无限人生 AI TOWN">
+  <title>AI 小镇：无限人生 · AI TOWN</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a1508"/>
+      <stop offset="1" stop-color="#ff9d4d" stop-opacity="0.55"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.85" cy="0.1" r="0.8">
+      <stop offset="0" stop-color="#ff9d4d" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#ff9d4d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="chip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.06"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="168" rx="18" fill="#080b12"/>
+  <rect width="640" height="168" rx="18" fill="url(#bg)"/>
+  <rect width="640" height="168" rx="18" fill="url(#glow)"/>
+
+  <g stroke="#ffffff" stroke-opacity="0.05">
+    <path d="M0 56h640M0 112h640"/>
+    <path d="M132 0v168M452 0v168"/>
+  </g>
+
+  <rect x="24" y="40" width="88" height="88" rx="22" fill="url(#chip)" stroke="#ffffff" stroke-opacity="0.22"/>
+  <text x="68" y="99" text-anchor="middle" font-size="46" font-family="'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">🏘️</text>
+
+  <text x="132" y="60" font-size="27" font-weight="700" fill="#ffffff" font-family="'Noto Sans CJK SC','Source Han Sans SC','PingFang SC','Microsoft YaHei',sans-serif">AI 小镇：无限人生</text>
+  <text x="133" y="84" font-size="12.5" fill="#ffffff" fill-opacity="0.62" letter-spacing="1.6" font-family="'Noto Sans CJK SC','Source Han Sans SC','PingFang SC','Microsoft YaHei',sans-serif">AI TOWN</text>
+  <text x="133" y="116" font-size="14" fill="#ffffff" fill-opacity="0.85" font-family="'Noto Sans CJK SC','Source Han Sans SC','PingFang SC','Microsoft YaHei',sans-serif">LLM 现场生成居民、事件与主线的模拟经营</text>
+
+  <text x="616" y="150" text-anchor="end" font-size="11.5" fill="#ffffff" fill-opacity="0.5" letter-spacing="0.6" font-family="'Noto Sans CJK SC','Source Han Sans SC','PingFang SC','Microsoft YaHei',sans-serif">ai-town/</text>
+  <circle cx="612" cy="26" r="4" fill="#ff9d4d" fill-opacity="0.9"/>
+  <circle cx="598" cy="26" r="2" fill="#ffffff" fill-opacity="0.35"/>
+</svg>

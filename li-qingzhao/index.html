@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="李清照生平与词作：从章丘明水、汴京初嫁、青州归来堂，到靖康南渡、金华八咏楼与临安晚岁。十四首（篇）作品按年代串联，配 Wikimedia Commons 图片、逐张署名，以及古琴曲《阳关三叠》背景音乐。" />
+  <meta name="author" content="tea_a2 · local demo" />
+  <title>李清照 · 漱玉词 | 一生与词</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='14' fill='%239e2f22'/%3E%3Ctext x='50' y='58' text-anchor='middle' font-size='46' fill='%23f5efe3' font-family='serif'%3E李%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <a class="skip" href="#timeline">跳到时间线</a>
+  <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="kicker">宋 · 词 · 她的一生</p>
+        <h1>李清照<small>LI QINGZHAO · 1084—1155</small></h1>
+        <p class="hero-sub" id="heroSub">寻寻觅觅，冷冷清清，凄凄惨惨戚戚</p>
+        <p class="hero-intro" id="heroIntro"></p>
+        <ul class="stats" id="heroStats"></ul>
+        <p class="hero-hint">
+          向下滚动，沿词与年走 <span aria-hidden="true">↓</span>
+          <span class="hero-hint-sub">点击图片可放大 · 右下角「古琴」可开背景音乐 · 每段可让本机 tea_a2 联网补充</span>
+        </p>
+      </div>
+      <aside class="hero-scroll" aria-hidden="true">
+        <div class="scroll-paper">
+          <p class="scroll-tune">声声慢</p>
+          <p class="scroll-text">寻寻觅觅，<span class="hl">冷冷清清</span>，凄凄惨惨戚戚。乍暖还寒时候，最难将息。</p>
+        </div>
+        <span class="seal">易安</span>
+      </aside>
+    </div>
+    <span class="petal p1"></span><span class="petal p2"></span>
+    <span class="petal p3"></span><span class="petal p4"></span>
+  </header>
+
+  <section class="stages" aria-labelledby="stagesTitle">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="stagesTitle">五段人生，<em>一条南渡路</em></h2>
+        <p>从章丘的书房到临安的西湖，她走了大半个南宋。下面这五段，是页面用来串词的骨架。</p>
+      </div>
+      <ol class="stage-grid" id="stageGrid"></ol>
+      <div class="journey" aria-label="李清照行迹">
+        <p class="journey-title">行迹</p>
+        <div class="journey-track" id="journeyTrack"></div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="rail" aria-label="按作品跳转">
+    <div class="rail-inner" id="railList"></div>
+  </nav>
+
+  <main id="timeline" class="timeline" tabindex="-1">
+    <div class="wrap" id="timelineList"></div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <h2>关于这个页面</h2>
+      <p class="disclaim">
+        <strong>关于内容</strong>：生平据《宋史·李格非传》、李清照《金石录后序》及通行年谱；词的系年除少数有明确记载外多为推定，
+        文中一律写「约」，作者归属或年份有争议的地方注明异说。引诗引词以通行本为准，不做“全集”式罗列。
+      </p>
+      <p class="disclaim">
+        <strong>关于图片</strong>：全部来自 <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>，
+        逐张标注作者与许可（CC0 / Public domain / CC BY / CC BY-SA）。古画与今景混用，是为了让词里的物象有个着落；
+        照片不是宋代原貌，图注里已说明。
+      </p>
+      <p class="disclaim">
+        <strong>关于音乐</strong>：背景音乐是真实录音——Charlie Huang 演奏的古琴曲《阳关三叠》（打谱自《琴学入门》1867），
+        来自 Wikimedia Commons，CC BY-SA 3.0；页面内做了响度归一与转码，属改编版本，同样以 CC BY-SA 3.0 提供。
+        浏览器要求先点一下「古琴」才能出声。
+      </p>
+      <p class="disclaim">
+        <strong>关于 AI</strong>：联网回答由本机 <code>tea_a2</code> 生成，<b>未经审核</b>，可能出错；
+        涉及年份、作者归属与文学史结论，请以正式出版物为准。连不上时页面完全可用。
+      </p>
+      <p class="meta" id="footerMeta"></p>
+    </div>
+  </footer>
+
+  <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="查看大图">
+    <button class="lb-close" type="button" data-lb="close" aria-label="关闭">✕</button>
+    <button class="lb-nav prev" type="button" data-lb="prev" aria-label="上一张">‹</button>
+    <button class="lb-nav next" type="button" data-lb="next" aria-label="下一张">›</button>
+    <figure class="lb-figure">
+      <div class="lb-stage" id="lbStage"><img id="lbImg" alt="" /></div>
+      <figcaption>
+        <p class="lb-title" id="lbTitle"></p>
+        <p class="lb-sub" id="lbSub"></p>
+        <p class="lb-credit" id="lbCredit"></p>
+        <p class="lb-tip">滚轮 / 双击缩放 · 放大后拖动平移 · ← → 切换 · Esc 关闭</p>
+      </figcaption>
+    </figure>
+    <p class="lb-count" id="lbCount"></p>
+  </div>
+
+  <div class="ai" id="ai" hidden>
+    <div class="ai-backdrop" data-ai="close"></div>
+    <section class="ai-panel" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
+      <header class="ai-head">
+        <div>
+          <h2 id="aiTitle">问 AI</h2>
+          <p class="ai-sub">本机 tea_a2 · 可联网检索</p>
+        </div>
+        <span class="ai-status" id="aiStatus" data-state="unknown">检测中…</span>
+        <button class="ai-close" type="button" data-ai="close" aria-label="关闭">✕</button>
+      </header>
+
+      <form class="ai-form" id="aiForm" autocomplete="off">
+        <label class="sr-only" for="aiQuery">想问什么</label>
+        <textarea id="aiQuery" rows="2" maxlength="300" placeholder="例如：《声声慢》开头的叠字为什么好？"></textarea>
+        <div class="ai-actions">
+          <button class="btn primary" type="submit" id="aiSubmit">提问</button>
+          <span class="ai-input-hint">Enter 发送 · Shift + Enter 换行</span>
+        </div>
+      </form>
+
+      <details class="ai-settings" id="aiSettings">
+        <summary>连接设置</summary>
+        <div class="ai-fields">
+          <label>服务地址<input id="aiBase" type="url" placeholder="http://localhost:8383" /></label>
+          <label>provider<input id="aiProvider" type="text" placeholder="deepseek" /></label>
+          <label>model<input id="aiModel" type="text" placeholder="deepseek-flash" /></label>
+        </div>
+        <p class="ai-note">默认 <code>deepseek / deepseek-flash</code>：该 provider 支持服务端联网检索。改完点「保存并探测」。</p>
+        <div class="ai-actions" style="padding:0 12px 12px">
+          <button class="btn small" type="button" id="aiSaveSettings">保存并探测</button>
+          <button class="btn small" type="button" id="aiResetSettings">恢复默认</button>
+        </div>
+      </details>
+
+      <div class="ai-body" id="aiBody" aria-live="polite">
+        <div class="ai-empty">
+          <p>问一首词、一个人物，或一个「为什么」。</p>
+          <p>回答来自本机 tea_a2（默认 <code>localhost:8383</code>），会带上检索到的来源链接。</p>
+        </div>
+      </div>
+      <div class="ai-foot">
+        <span id="aiMeta">AI 生成 · 未经审核</span>
+        <button class="btn small" type="button" id="aiClear">清空回答</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="audio" id="audioDock">
+    <div class="music-pop" id="musicPop" hidden>
+      <div class="music-head">
+        <div>
+          <p class="music-title" id="musicTitle">阳关三叠</p>
+          <p class="music-by" id="musicBy"></p>
+        </div>
+        <button class="music-play" id="musicPlay" type="button" aria-label="播放古琴" title="播放古琴">▶</button>
+      </div>
+      <p class="music-lead">古琴曲，打谱自《琴学入门》（1867）。讲的是送别——正好配她一生的离别。</p>
+      <label class="music-vol" for="musicVol">
+        <span>音量 <output id="musicVolOut">45%</output></span>
+        <input id="musicVol" type="range" min="0" max="100" step="1" value="45" />
+      </label>
+      <p class="music-credit" id="musicCredit"></p>
+      <p class="music-note">浏览器要求先点一下「古琴」；切到后台会自动压低音量。</p>
+      <button class="btn small" type="button" id="musicHintClose">收起详情</button>
+    </div>
+    <div class="audio-row">
+      <button class="music-btn" id="musicBtn" type="button" aria-pressed="false" aria-label="背景音乐：古琴《阳关三叠》" title="背景音乐：古琴《阳关三叠》">
+        <span class="play-ico" aria-hidden="true">▶</span>
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="music-label">古琴</span>
+      </button>
+      <button class="music-more" id="musicMore" type="button" aria-label="音乐与音量设置" aria-expanded="false">⋯</button>
+    </div>
+  </div>
+
+  <button class="fab" id="aiFab" type="button" aria-label="打开 AI 问答">问<span>AI</span></button>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <audio id="bgm" preload="none" loop playsinline></audio>
+
+  <script src="assets/images/sources.js"></script>
+  <script src="src/data-life.js"></script>
+  <script src="src/core.js"></script>
+  <script src="src/audio.js"></script>
+  <script src="src/online.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>
