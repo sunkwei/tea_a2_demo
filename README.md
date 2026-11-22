@@ -2,7 +2,7 @@
 
 # 🎪 a2_demo · 多项目实验场
 
-**17 个各自独立、打开就能跑的小项目**
+**18 个各自独立、打开就能跑的小项目**
 3D 场景 · 纯前端小应用 · LLM 玩法 · 内容抓取 · 素材与建模
 
 `npm install` → `npm run dev` → <http://127.0.0.1:5173/>
@@ -90,6 +90,14 @@
 </td>
 </tr>
 <tr>
+<td colspan="2" width="100%" valign="top">
+  <a href="li-qingzhao/index.html"><img src="docs/banners/li-qingzhao.svg" width="400" alt="李清照 · 漱玉词"></a>
+  <p><b>🪷 李清照 · 漱玉词</b> · Li Qingzhao<br>
+  <sub>一生与词：16 个节点串起生平与 14 篇作品 + 真实古琴《阳关三叠》背景音乐 · 原生 JS（file://）<br>
+  <code>li-qingzhao/</code> · 双击 <code>index.html</code> · <a href="li-qingzhao/README.md">说明</a></sub></p>
+</td>
+</tr>
+<tr>
 <td width="50%" valign="top">
   <a href="sanguosha-ai/web/index.html"><img src="docs/banners/sanguosha-ai.svg" width="400" alt="AI 三国杀"></a>
   <p><b>⚔️ AI 三国杀</b> · Sanguosha AI<br>
@@ -160,17 +168,18 @@
 | 7 | 🧊 三阶魔方教程 | `rubiks-cube/` | 手写 WebGL 魔方 + 7 步还原教程 | WebGL（零依赖） | 双击 `index.html` | `npm run test:rubik` |
 | 8 | 🌿 中药大全 | `tcm-herb/` | 86 味药材 / 39 病症 / 22 验方 | 原生 JS（file://） | 双击 `index.html` | `npm run test:tcm` |
 | 9 | 🏺 中国陶器史 | `pottery/` | 两万年长幅时间线 + 实时合成配乐 | 原生 JS（file://） | 双击 `index.html` | `npm run test:pottery` |
-| 10 | 🏘️ AI 小镇 | `ai-town/` | LLM 实时生成一切文字的模拟经营 | Python + Tkinter | `python ai-town/main.py` | `python ai-town/main.py --selftest` |
-| 11 | ⚔️ AI 三国杀 | `sanguosha-ai/` | 三个大模型同台打三国杀 | Python + HTML5 | `npm run sgss:web` | `npm run test:sgss` |
-| 12 | 🦊 tea_a2 划词助手 | `tea-select/` | 划词即译 / 搜 / 总结 + 划图识图 | JS (MV3) | `web-ext run` | `node tea-select/tools/selftest.mjs` |
-| 13 | 📺 B 站 digest | `bilibili/` | 观看历史 → 字幕 → LLM 周报 | Python | `python bilibili/bili.py all` | — |
-| 14 | 📚 知乎 digest | `zhihu/` | 收藏夹 / 回答正文 → 摘要 | Python | `python zhihu/zhihu.py digest` | `python zhihu/tests/test_zhihu_llm_post.py` |
-| 15 | 📼 本地视频分析 | `video_analysis/` | 抽帧拼图 + 本地 ASR → 分析报告 | Python + ONNX | `python video_analysis/video_analysis.py <视频>` | — |
-| 16 | 🎮 GoDot 三国肉鸽 | `GoDot/` | Godot 4 项目：三国题材肉鸽 | Godot 4 | Godot 打开 | — |
-| 17 | 🏗️ 青岛栈桥建模 | `zhanqiao/` | 真实尺寸 Blender 建模 | Blender | 打开 `.blend` | `python zhanqiao/verify.py` |
+| 10 | 🪷 李清照 · 漱玉词 | `li-qingzhao/` | 一生与词：16 个节点 + 真实古琴配乐 | 原生 JS（file://） | 双击 `index.html` | `npm run test:lqz` |
+| 11 | 🏘️ AI 小镇 | `ai-town/` | LLM 实时生成一切文字的模拟经营 | Python + Tkinter | `python ai-town/main.py` | `python ai-town/main.py --selftest` |
+| 12 | ⚔️ AI 三国杀 | `sanguosha-ai/` | 三个大模型同台打三国杀 | Python + HTML5 | `npm run sgss:web` | `npm run test:sgss` |
+| 13 | 🦊 tea_a2 划词助手 | `tea-select/` | 划词即译 / 搜 / 总结 + 划图识图 | JS (MV3) | `web-ext run` | `node tea-select/tools/selftest.mjs` |
+| 14 | 📺 B 站 digest | `bilibili/` | 观看历史 → 字幕 → LLM 周报 | Python | `python bilibili/bili.py all` | — |
+| 15 | 📚 知乎 digest | `zhihu/` | 收藏夹 / 回答正文 → 摘要 | Python | `python zhihu/zhihu.py digest` | `python zhihu/tests/test_zhihu_llm_post.py` |
+| 16 | 📼 本地视频分析 | `video_analysis/` | 抽帧拼图 + 本地 ASR → 分析报告 | Python + ONNX | `python video_analysis/video_analysis.py <视频>` | — |
+| 17 | 🎮 GoDot 三国肉鸽 | `GoDot/` | Godot 4 项目：三国题材肉鸽 | Godot 4 | Godot 打开 | — |
+| 18 | 🏗️ 青岛栈桥建模 | `zhanqiao/` | 真实尺寸 Blender 建模 | Blender | 打开 `.blend` | `python zhanqiao/verify.py` |
 
 > `shared/` 不是独立项目：它是 `bilibili/` 与 `zhihu/` 共用的登录态 + LLM 调用层。
-> 四个 LLM 相关应用（便笺 / 划词助手 / 三国杀 / 陶器史）默认连本机 `tea_a2`（`http://localhost:8383`）。
+> 五个 LLM 相关应用（便笺 / 划词助手 / 三国杀 / 陶器史 / 李清照）默认连本机 `tea_a2`（`http://localhost:8383`）。
 
 ---
 
@@ -181,7 +190,7 @@
 
 | 情况 | 项目 | `PROMPT.md` |
 |------|------|-------------|
-| ✅ 本机创建 + 有留档 | 🦊 `tea-select/`、🏺 `pottery/` | 创建与后续改动都在 |
+| ✅ 本机创建 + 有留档 | 🦊 `tea-select/`、🏺 `pottery/`、🪷 `li-qingzhao/` | 创建与后续改动都在 |
 | ⚠️ 本机创建，但会话没留下 | 🌿 中药大全、📌 便笺、🧊 魔方、🚀 终末地、🏘️ AI 小镇、⚔️ 三国杀、📼 视频分析、🏗️ 栈桥 | 无（可补录） |
 | 📦 **外部引入**（不是本机创建的） | 📺 `bilibili/`、📚 `zhihu/`、🐱 `meow-mart/`、🐍 贪吃蛇、🎬 短片、📺 IPTV、🎮 GoDot | 本机没有创建提示词；`bilibili/`、`meow-mart/` 有一份，但只含搬进来之后的改动 |
 
@@ -208,7 +217,7 @@ npm run dev        # http://127.0.0.1:5173/  ← 项目索引页
 | 🐍 贪吃蛇竞赛 | <http://127.0.0.1:5173/snake-race/> |
 | 🎬 Self-Attention 短片 | <http://127.0.0.1:5173/attention-film/> |
 | 📺 IPTV 剧场 | <http://127.0.0.1:5173/iptv-player/> |
-| 📌 便笺 / 🧊 魔方 / 🌿 中药 / 🏺 陶器 | 双击各自目录下的 `index.html`（file:// 直开） |
+| 📌 便笺 / 🧊 魔方 / 🌿 中药 / 🏺 陶器 / 🪷 李清照 | 双击各自目录下的 `index.html`（file:// 直开） |
 
 生产构建：
 
@@ -220,7 +229,7 @@ npm run preview    # 本地预览构建结果
 ### 三类项目，三种跑法
 
 1. **Vite 工程托管**（共用一个 `vite.config.js`）：索引页、喵屋便利店、终末地、贪吃蛇、短片、IPTV、三国杀网页版。
-2. **纯 `file://` 应用**：便笺、魔方、中药大全、陶器史 —— 用经典 `<script>` 引入，双击 `index.html` 即可（ES module 在 `file://` 下会被 CORS 拦）。
+2. **纯 `file://` 应用**：便笺、魔方、中药大全、陶器史、李清照 —— 用经典 `<script>` 引入，双击 `index.html` 即可（ES module 在 `file://` 下会被 CORS 拦）。
 3. **命令行 / 编辑器项目**：AI 小镇、B 站 / 知乎 digest、视频分析、tea-select 扩展、Godot 工程、Blender 建模 —— 看各自 README。
 
 > Python 脚本请用系统解释器 `/usr/bin/python3`（带有 requests / pyyaml / playwright）。
@@ -239,7 +248,7 @@ npm run preview    # 本地预览构建结果
       │
       └── LLM 调用封装 ──▶ 本机 tea_a2 (localhost:8383)
 
-   sticky-notes/  tea-select/  pottery/  ── HTTP ──▶ 本机 tea_a2
+   sticky-notes/  tea-select/  pottery/  li-qingzhao/  ── HTTP ──▶ 本机 tea_a2
 
    ai-town/  sanguosha-ai/  ── 直连模型 provider（Ollama / OpenAI 兼容 / 云端）
 ```
@@ -258,9 +267,10 @@ npm run preview    # 本地预览构建结果
 | `npm run test:rubik` · `npm run rubik:verify` | 魔方离线断言 · 无头端到端 |
 | `npm run test:tcm` · `npm run tcm:verify` · `npm run tcm:build` | 中药大全断言 · 端到端 · 单文件版 |
 | `npm run test:pottery` · `npm run pottery:verify` · `npm run pottery:serve` | 陶器史断言 · 端到端 · 本地服务器 |
+| `npm run test:lqz` · `npm run lqz:verify` · `npm run lqz:build` · `npm run lqz:serve` | 李清照断言 · 端到端 · 单文件版 · 本地服务器 |
 | `npm run test:endfield` · `npm run endfield:verify` · `npm run endfield:serve` | 终末地断言 · 端到端 · 本地服务器 |
 | `npm run sgss:web` · `npm run test:sgss` · `npm run sgss:doctor` | 三国杀网页版 · pytest · 环境自检 |
-| `npm run index:build` | 重生成 17 张横幅（`docs/banners/`）+ 根目录索引页 |
+| `npm run index:build` | 重生成 18 张横幅（`docs/banners/`）+ 根目录索引页 |
 | `npm run prompts:build` | 从会话记录抽取用户输入 → 各项目 `PROMPT.md` + `docs/PROMPTS.md` |
 
 ---
@@ -275,7 +285,7 @@ tea_a2_demo/
 ├── docs/
 │   ├── INDEX.md               # 全仓库索引（技术栈 / 依赖 / 自测约定）
 │   ├── PROMPTS.md             # 用户输入归档总表（哪些项目留了原始需求）
-│   └── banners/               # 17 张项目横幅 SVG（npm run index:build 生成）
+│   └── banners/               # 18 张项目横幅 SVG（npm run index:build 生成）
 ├── tools/
 │   ├── gen-project-index.mjs   # 横幅 + 落地索引页生成器（改文案改这里）
 │   └── collect-prompts.mjs     # 会话记录 → 各项目 PROMPT.md
@@ -289,6 +299,7 @@ tea_a2_demo/
 ├── rubiks-cube/               # 🧊 三阶魔方教程（file:// 应用）
 ├── tcm-herb/                  # 🌿 中药大全（file:// 应用）
 ├── pottery/                   # 🏺 中国陶器史（file:// 应用）
+├── li-qingzhao/               # 🪷 李清照 · 漱玉词（file:// 应用）
 ├── ai-town/                   # 🏘️ AI 小镇（Python + Tkinter）
 ├── sanguosha-ai/              # ⚔️ AI 三国杀（Python + 网页版）
 ├── bilibili/  zhihu/  shared/  # 📺📚 抓取 + 摘要（shared 为共用层）

@@ -101,6 +101,14 @@ const projects = [
     note: '背景音乐用 Web Audio 实时合成，没有音频文件',
   },
   {
+    slug: 'li-qingzhao', emoji: '🪷', cat: 'web',
+    cn: '李清照 · 漱玉词', en: 'LI QINGZHAO',
+    tagline: '一生与词：16 个节点串起生平与 14 篇作品',
+    tags: ['原生 JS', '长幅时间线', '古琴音乐', 'AI 问答'],
+    dir: 'li-qingzhao/', web: 'li-qingzhao/index.html', run: '双击 index.html',
+    note: '真实古琴录音《阳关三叠》+ Wikimedia 配图逐张署名',
+  },
+  {
     slug: 'ai-town', emoji: '🏘️', cat: 'llm',
     cn: 'AI 小镇：无限人生', en: 'AI TOWN',
     tagline: 'LLM 现场生成居民、事件与主线的模拟经营',
@@ -178,6 +186,7 @@ const PALETTE = {
   'rubiks-cube': ['#0b1a2a', '#35b8ff'],
   'tcm-herb': ['#0d2213', '#63d471'],
   'pottery': ['#2b160c', '#d9822b'],
+  'li-qingzhao': ['#1b1310', '#c9563f'],
   'ai-town': ['#2a1508', '#ff9d4d'],
   'sanguosha-ai': ['#2b0b0b', '#e0483c'],
   'tea-select': ['#241306', '#ff8a3d'],
@@ -367,7 +376,7 @@ ${projects.map(cardHtml).join('\n')}
 
       <footer>
         前端项目统一由根目录的 Vite 工程托管（<code>npm run dev</code> → <code>http://127.0.0.1:5173/</code>）；
-        便笺 / 魔方 / 中药大全 / 陶器史是纯 <code>file://</code> 应用，双击各自目录下的 <code>index.html</code> 即可。
+        便笺 / 魔方 / 中药大全 / 陶器史 / 李清照是纯 <code>file://</code> 应用，双击各自目录下的 <code>index.html</code> 即可。
       </footer>
     </div>
 

@@ -33,6 +33,8 @@ const PROJECTS = [
     keys: ['tea-select', '划词', 'firefox', 'addon', '识图'] },
   { dir: 'pottery', name: '🏺 中国陶器史', origin: 'local', from: '2026-11-22 `feat(pottery): 新增「中国陶器史」`',
     keys: ['pottery', '陶器'] },
+  { dir: 'li-qingzhao', name: '🪷 李清照 · 漱玉词', origin: 'local', from: '2026-11-22 本机创建（本次会话）',
+    keys: ['李清照', 'li-qingzhao', '漱玉词', '古琴'] },
   { dir: 'meow-mart', name: '🐱 喵屋便利店', origin: 'imported', from: '2026-11-02 `feat: 提交 demo 全部代码`（随首批 `src/` 入库）',
     keys: ['喵屋', 'meow-mart', 'meow mart'] },
   { dir: 'tcm-herb', name: '🌿 中药大全', origin: 'local', from: '2026-11-21 `feat(tcm-herb): 新增「中药大全」`',

@@ -1,7 +1,7 @@
 {
   "name": "a2-demo",
   "version": "1.0.0",
-  "description": "a2_demo · 多项目实验场：喵屋便利店 3D 小镇 + 贪吃蛇 / IPTV / 魔方 / 中药 / 陶器 / LLM 应用 / 抓取摘要",
+  "description": "a2_demo · 多项目实验场：喵屋便利店 3D 小镇 + 贪吃蛇 / IPTV / 魔方 / 中药 / 陶器 / 李清照 / LLM 应用 / 抓取摘要",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -40,6 +40,12 @@
     "pottery:build": "node pottery/tools/build-single.mjs",
     "pottery:images": "node pottery/tools/fetch-images.mjs",
     "pottery:serve": "node pottery/tools/serve.mjs",
+    "test:lqz": "node li-qingzhao/tools/selftest.mjs",
+    "lqz:verify": "node li-qingzhao/tools/verify.mjs",
+    "lqz:verify:online": "node li-qingzhao/tools/verify.mjs --online",
+    "lqz:build": "node li-qingzhao/tools/build-single.mjs",
+    "lqz:images": "node li-qingzhao/tools/fetch-images.mjs",
+    "lqz:serve": "node li-qingzhao/tools/serve.mjs",
     "test:sticky": "node sticky-notes/tools/selftest.mjs",
     "sticky:verify": "node sticky-notes/tools/verify.mjs",
     "sticky:build": "node sticky-notes/tools/build-single.mjs",

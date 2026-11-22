@@ -20,6 +20,7 @@
 | 📚 知乎 digest | `zhihu/` | 外部引入 | — | 0 | 0 |
 | 🦊 tea_a2 划词助手 | `tea-select/` | 本机创建 | [`tea-select/PROMPT.md`](../tea-select/PROMPT.md) | 2 | 1 |
 | 🏺 中国陶器史 | `pottery/` | 本机创建 | [`pottery/PROMPT.md`](../pottery/PROMPT.md) | 4 | 1 |
+| 🪷 李清照 · 漱玉词 | `li-qingzhao/` | 本机创建 | [`li-qingzhao/PROMPT.md`](../li-qingzhao/PROMPT.md) | 1 | 1 |
 | 🐱 喵屋便利店 | `meow-mart/` | 外部引入 | [`meow-mart/PROMPT.md`](../meow-mart/PROMPT.md) | 1 | 1 |
 | 🌿 中药大全 | `tcm-herb/` | 本机创建 | — | 0 | 0 |
 | 📌 便笺 | `sticky-notes/` | 本机创建 | — | 0 | 0 |
@@ -83,4 +84,4 @@
 一句话同时提到项目和仓库时，归到它**具体动到的项目**（例如「将 喵屋便利店 移到子目录，重排 README」落在 `meow-mart/PROMPT.md`）；
 没提任何项目名、但接着同一会话往下说的（例如「图片点击放大有问题」），按上下文归到当前项目。
 
-统计：扫描 8 个会话、54 条用户消息，收录 22 条，丢弃 32 条。
+统计：扫描 9 个会话、61 条用户消息，收录 23 条，丢弃 38 条。
