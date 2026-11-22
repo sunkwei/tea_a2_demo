@@ -27,6 +27,8 @@ const VERBOSE = process.argv.includes('--verbose');
 const PROJECTS = [
   { dir: 'bilibili', name: '📺 B 站 digest', origin: 'imported', from: '2026-11-04 `feat(bili/zhihu): …搬进这个仓库`',
     keys: ['bilibili', 'bili.py', 'bv1', 'b站', '稍后观看', '稍后再看', '字幕', 'asr', 'sensevoice'] },
+  { dir: 'firefox-tab-colors', name: '🎨 彩色标签（Firefox 扩展）', origin: 'local', from: '2026-11-12 本机创建（本次会话）',
+    keys: ['tab-colors', 'firefox-tab-colors', '标签颜色', '标签染色', 'tabGroups', '扩展', 'webextension', 'rdp'] },
   { dir: 'piano', name: '🎹 琴房 · 钢琴练习', origin: 'local', from: '2026-11-22 本机创建（本次会话）',
     keys: ['piano', '琴房', '钢琴', '多点触摸', '键宽', '音阶', '和弦', '跟弹'] },
   { dir: 'zhihu', name: '📚 知乎 digest', origin: 'imported', from: '2026-11-04 `feat(bili/zhihu): …搬进这个仓库`',

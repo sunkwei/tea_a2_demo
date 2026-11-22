@@ -117,6 +117,14 @@ const projects = [
     note: '音色全部靠加法合成现场算出来，仓库里没有一个音频文件',
   },
   {
+    slug: 'tab-colors', emoji: '🎨', cat: 'asset',
+    cn: '彩色标签', en: 'TAB COLORS',
+    tagline: 'Firefox 扩展：在分组之上给单个标签上色',
+    tags: ['WebExtension', 'MV3', 'Firefox'],
+    dir: 'firefox-tab-colors/', web: null, run: 'about:debugging 临时加载 manifest.json',
+    note: 'WebExtension 没有 per-tab 颜色，只能内容脚本改标题前缀 + 换彩色图标',
+  },
+  {
     slug: 'ai-town', emoji: '🏘️', cat: 'llm',
     cn: 'AI 小镇：无限人生', en: 'AI TOWN',
     tagline: 'LLM 现场生成居民、事件与主线的模拟经营',

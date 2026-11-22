@@ -104,6 +104,14 @@
 </td>
 </tr>
 <tr>
+<td colspan="2" width="100%" valign="top">
+  <a href="firefox-tab-colors/README.md"><img src="docs/banners/tab-colors.svg" width="400" alt="彩色标签"></a>
+  <p><b>🎨 彩色标签</b> · Tab Colors（Firefox 扩展）<br>
+  <sub>在原生标签分组之上给单个标签上色：彩色图标 + 强制标题前缀，9 色 / 整组染色 / 右键菜单 · MV3<br>
+  <code>firefox-tab-colors/</code> · <code>about:debugging</code> 临时加载 · <a href="firefox-tab-colors/README.md">说明</a></sub></p>
+</td>
+</tr>
+<tr>
 <td width="50%" valign="top">
   <a href="sanguosha-ai/web/index.html"><img src="docs/banners/sanguosha-ai.svg" width="400" alt="AI 三国杀"></a>
   <p><b>⚔️ AI 三国杀</b> · Sanguosha AI<br>
@@ -184,6 +192,7 @@
 | 17 | 📼 本地视频分析 | `video_analysis/` | 抽帧拼图 + 本地 ASR → 分析报告 | Python + ONNX | `python video_analysis/video_analysis.py <视频>` | — |
 | 18 | 🎮 GoDot 三国肉鸽 | `GoDot/` | Godot 4 项目：三国题材肉鸽 | Godot 4 | Godot 打开 | — |
 | 19 | 🏗️ 青岛栈桥建模 | `zhanqiao/` | 真实尺寸 Blender 建模 | Blender | 打开 `.blend` | `python zhanqiao/verify.py` |
+| 20 | 🎨 彩色标签 | `firefox-tab-colors/` | Firefox 扩展：单个标签上色（分组之上再区分） | WebExtension MV3 | `about:debugging` 临时加载 | `npm run tabcolors:e2e -- <端口>` |
 
 > `shared/` 不是独立项目：它是 `bilibili/` 与 `zhihu/` 共用的登录态 + LLM 调用层。
 > 五个 LLM 相关应用（便笺 / 划词助手 / 三国杀 / 陶器史 / 李清照）默认连本机 `tea_a2`（`http://localhost:8383`）。
@@ -312,6 +321,8 @@ tea_a2_demo/
 ├── sanguosha-ai/              # ⚔️ AI 三国杀（Python + 网页版）
 ├── bilibili/  zhihu/  shared/  # 📺📚 抓取 + 摘要（shared 为共用层）
 ├── video_analysis/            # 📼 本地视频分析
+├── firefox-tab-colors/        # 🎨 Firefox 扩展：单标签上色
+├── tab-colors-dev/            # 🎨 上面那个扩展的开发验证（RDP 驱动真实 Firefox）
 ├── tea-select/                # 🦊 Firefox 划词扩展
 ├── GoDot/                     # 🎮 Godot 4 项目
 ├── zhanqiao/                  # 🏗️ Blender 建模

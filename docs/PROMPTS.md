@@ -19,6 +19,7 @@
 | 📺 B 站 digest | `bilibili/` | 外部引入 | [`bilibili/PROMPT.md`](../bilibili/PROMPT.md) | 13 | 3 |
 | 📚 知乎 digest | `zhihu/` | 外部引入 | — | 0 | 0 |
 | 🎹 琴房 · 钢琴练习 | `piano/` | 本机创建 | [`piano/PROMPT.md`](../piano/PROMPT.md) | 3 | 1 |
+| 🎨 彩色标签（Firefox 扩展） | `firefox-tab-colors/` | 本机创建 | [`firefox-tab-colors/PROMPT.md`](../firefox-tab-colors/PROMPT.md) | 2 | 2 |
 | 🦊 tea_a2 划词助手 | `tea-select/` | 本机创建 | [`tea-select/PROMPT.md`](../tea-select/PROMPT.md) | 2 | 1 |
 | 🏺 中国陶器史 | `pottery/` | 本机创建 | [`pottery/PROMPT.md`](../pottery/PROMPT.md) | 4 | 1 |
 | 🪷 李清照 · 漱玉词 | `li-qingzhao/` | 本机创建 | [`li-qingzhao/PROMPT.md`](../li-qingzhao/PROMPT.md) | 1 | 1 |

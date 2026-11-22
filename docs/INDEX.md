@@ -26,6 +26,7 @@
 | 15 | 🏺 中国陶器史 | `pottery/` | 两万年长幅时间线：20 件真实器物，左年代 / 中实物图 / 右点评，点图放大，Web Audio 实时合成背景音乐，可选 tea_a2 联网问答 | 原生 JS（file://） | 双击 `index.html` | `npm run test:pottery` |
 | 16 | 🪷 李清照 · 漱玉词 | `li-qingzhao/` | 一生与词：16 个节点 / 14 篇作品，左年代 / 中配图 + 题眼 / 右词笺与注释，真实古琴《阳关三叠》，可选 tea_a2 问答 | 原生 JS（file://） | 双击 `index.html` | `npm run test:lqz` |
 | 17 | 🎹 琴房 | `piano/` | 多点触摸钢琴练习：多指复音 / 瀑布流跟弹判分 / 认键 / 音阶和弦，WebAudio 加法合成音色 | 原生 JS（无构建） | 双击 `index.html` | `npm run test:piano` |
+| 18 | 🎨 彩色标签 | `firefox-tab-colors/` | Firefox 扩展：在原生标签分组之上给单个标签上色（彩色图标 + 标题前缀） | WebExtension MV3 | `about:debugging` 临时加载 | `node tab-colors-dev/tools/e2e.mjs <端口>` |
 
 > 每个项目都有自己的 `README.md`，细节看那一份；本页只做索引与横向对比。
 
