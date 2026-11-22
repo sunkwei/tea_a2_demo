@@ -160,6 +160,15 @@ check('parseSources 跳过失败调用并去重', sources.length === 2, sources.
 check('mergeSources 去重合并', C.mergeSources(sources, C.extractUrls('见 https://zh.wikipedia.org/wiki/李清照 和 https://example.com/a')).length === 3);
 check('extractUrls 去掉句末标点', C.extractUrls('见 https://example.com/a。')[0].url === 'https://example.com/a');
 
+/* 回答渲染（先转义，再做有限 Markdown 处理） */
+const md = C.renderAnswer('**结论先说：** 家世影响大。\n\n1. **家世**，主要是"文化课本"\n2. 第二条\n\n- 要点 A\n\n结尾');
+check('renderAnswer 渲染粗体', /<strong>结论先说：<\/strong>/.test(md), md.slice(0, 80));
+check('renderAnswer 渲染有序列表', /<ol><li><strong>家世<\/strong>/.test(md));
+check('renderAnswer 渲染无序列表', /<ul><li>要点 A<\/li><\/ul>/.test(md));
+check('renderAnswer 保留段落', /<p>结尾<\/p>/.test(md));
+check('renderAnswer 转义 HTML', !/<script>/.test(C.renderAnswer('<script>alert(1)</script>')));
+check('renderAnswer 只放行 http(s) 链接', /<a href="https:\/\/a\.b"/.test(C.renderAnswer('[x](https://a.b)')) && !/<a href="javascript:/.test(C.renderAnswer('[x](javascript:alert(1))')));
+
 /* ------------------------------------------------------------------ *
  * 5. 音频播放器
  * ------------------------------------------------------------------ */

@@ -710,27 +710,6 @@
     });
   }
 
-  function presetsFor(entry) {
-    if (entry) {
-      return [
-        '这首词最动人的一句是哪一句？为什么？',
-        '把它译成现代汉语，并解释几个难词。',
-        '李清照写它时，正处在人生的哪一段？',
-      ];
-    }
-    return [
-      '李清照的词为什么被称为“易安体”？',
-      '《声声慢》开头的十四叠字好在哪里？',
-      '李清照与赵明诚收藏的金石书画是怎么散失的？',
-    ];
-  }
-
-  function renderPresets(entry) {
-    $('#aiPresets').innerHTML = presetsFor(entry).map(function (q) {
-      return '<button type="button" data-q="' + core.escapeHtml(q) + '">' + core.escapeHtml(q) + '</button>';
-    }).join('');
-  }
-
   function emptyAiBody(entry) {
     if (entry) {
       $('#aiBody').innerHTML =
@@ -751,7 +730,6 @@
     aiEntry = entry || null;
     const q = $('#aiQuery');
     q.value = entry ? entry.question : '';
-    renderPresets(entry);
     $('#ai').hidden = false;
     document.body.style.overflow = 'hidden';
     emptyAiBody(entry);
@@ -770,11 +748,7 @@
   }
 
   function answerHtml(content) {
-    const blocks = String(content || '').split(/\n{2,}/);
-    return blocks.map(function (b) {
-      const t = core.escapeHtml(b).replace(/\n/g, '<br>');
-      return '<p>' + t + '</p>';
-    }).join('');
+    return core.renderAnswer(content);
   }
 
   function sourcesHtml(sources) {
@@ -866,12 +840,6 @@
         ev.preventDefault();
         openAi(byId[askBtn.dataset.ask] || null);
         return;
-      }
-      const preset = ev.target.closest('[data-q]');
-      if (preset) {
-        $('#aiQuery').value = preset.dataset.q;
-        $('#aiQuery').focus();
-        $('#aiQuery').select();
       }
     });
 

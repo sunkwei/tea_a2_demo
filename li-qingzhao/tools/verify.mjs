@@ -315,23 +315,30 @@ async function main() {
     hidden: document.querySelector('#ai').hidden,
     q: document.querySelector('#aiQuery').value,
     presets: document.querySelectorAll('#aiPresets button').length,
+    hasPresets: !!document.querySelector('#aiPresets'),
     status: document.querySelector('#aiStatus').textContent,
     summary: document.querySelector('#aiSettings summary').textContent,
     settingsOpen: document.querySelector('#aiSettings').open,
   }));
   check('AI 抽屉打开', ai1.hidden === false);
   check('AI 输入框带入当前作品问题', ai1.q.includes('如梦令') || ai1.q.length > 8, ai1.q);
-  check('AI 示例问题 3 条', ai1.presets === 3, ai1.presets);
+  check('已移除「试试问」', ai1.presets === 0 && ai1.hasPresets === false, ai1.presets + '/' + ai1.hasPresets);
   check('AI 状态徽标有文案', ai1.status.length > 0, ai1.status);
   check('连接设置显示地址', /localhost|127\.0\.0\.1/.test(ai1.summary), ai1.summary);
 
-  const preset = await page.evaluate(() => {
-    const b = document.querySelector('#aiPresets button');
-    const before = document.querySelector('#aiQuery').value;
-    b.click();
-    return { before, after: document.querySelector('#aiQuery').value, hidden: document.querySelector('#ai').hidden };
+  const ratio = await page.evaluate(() => {
+    const panel = document.querySelector('.ai-panel').getBoundingClientRect();
+    const body = document.querySelector('.ai-body').getBoundingClientRect();
+    return { panel: panel.height, body: body.height, ratio: body.height / panel.height };
   });
-  check('点击示例问题只填入输入框', preset.after !== preset.before && preset.hidden === false, preset);
+  check('回答区至少占抽屉高度的 50%', ratio.ratio >= 0.5, (ratio.ratio * 100).toFixed(1) + '% (' + Math.round(ratio.body) + '/' + Math.round(ratio.panel) + ')');
+
+  const md = await page.evaluate(() => {
+    const html = window.LI_QINGZHAO_CORE.renderAnswer('**结论先说：** 家世影响大。\n\n1. **家世**，主要是\"文化课本\"\n\n结尾');
+    return { html, escaped: window.LI_QINGZHAO_CORE.renderAnswer('<img src=x onerror=alert(1)>') };
+  });
+  check('回答按 Markdown 渲染（粗体/列表）', /<strong>结论先说：<\/strong>/.test(md.html) && /<ol><li>/.test(md.html), md.html.slice(0, 120));
+  check('回答内容先转义，不放行原始 HTML', !/<img/i.test(md.escaped), md.escaped);
 
   await page.keyboard.press('Escape');
   await sleep(250);

@@ -327,6 +327,71 @@
     return '';
   }
 
+  /* ------------------------------------------------------------------ *
+   * AI 回答渲染（先转义，再做有限的 Markdown 处理）
+   * ------------------------------------------------------------------ */
+
+  /** 行内标记：**粗体**、`代码`、[文字](https 链接) */
+  function inlineMarkup(s) {
+    let t = escapeHtml(s);
+    t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+    t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    return t;
+  }
+
+  /**
+   * 把模型回答渲染成安全 HTML：段落、有序/无序列表、标题行。
+   * 内容先整体转义，只放行我们自己的标签，链接只允许 http(s)。
+   */
+  function renderAnswer(text) {
+    const lines = String(text == null ? '' : text).split(/\r?\n/);
+    const out = [];
+    let para = [];
+    let list = null;
+
+    function flushPara() {
+      if (!para.length) return;
+      out.push('<p>' + para.map(inlineMarkup).join('<br>') + '</p>');
+      para = [];
+    }
+    function flushList() {
+      if (!list) return;
+      out.push('<' + list.tag + '>' + list.items.map(function (i) { return '<li>' + i + '</li>'; }).join('') + '</' + list.tag + '>');
+      list = null;
+    }
+    function flushAll() { flushPara(); flushList(); }
+
+    lines.forEach(function (raw) {
+      const line = String(raw).replace(/\s+$/, '');
+      const trimmed = line.trim();
+      let m;
+      if (!trimmed) { flushAll(); return; }
+      if ((m = trimmed.match(/^#{1,4}\s+(.*)$/))) {
+        flushAll();
+        out.push('<p class="ai-h">' + inlineMarkup(m[1]) + '</p>');
+        return;
+      }
+      if ((m = trimmed.match(/^(\d{1,2})[.)]\s+(.*)$/))) {
+        flushPara();
+        if (!list || list.tag !== 'ol') { flushList(); list = { tag: 'ol', items: [] }; }
+        list.items.push(inlineMarkup(m[2]));
+        return;
+      }
+      if ((m = trimmed.match(/^[-*•]\s+(.*)$/))) {
+        flushPara();
+        if (!list || list.tag !== 'ul') { flushList(); list = { tag: 'ul', items: [] }; }
+        list.items.push(inlineMarkup(m[1]));
+        return;
+      }
+      flushList();
+      para.push(trimmed);
+    });
+    flushAll();
+    return out.join('');
+  }
+
   return {
     sortByOrder: sortByOrder,
     validate: validate,
@@ -346,6 +411,8 @@
     tuneOf: tuneOf,
     creditText: creditText,
     buildAskPrompt: buildAskPrompt,
+    inlineMarkup: inlineMarkup,
+    renderAnswer: renderAnswer,
     normalizeQuery: normalizeQuery,
     parseSearchOutput: parseSearchOutput,
     parseSources: parseSources,

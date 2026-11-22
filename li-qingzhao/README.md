@@ -33,7 +33,8 @@ rail          吸顶的作品导航（16 个入口；桌面 8×2 网格，移动
 timeline      三栏长列表：年代 | 配图 + 题眼 | 词与文
 footer        内容 / 图片 / 音乐 / AI 四段免责声明 + 署名汇总
 lightbox      图片放大：滚轮/双击缩放、放大后拖动平移、← → 换图、Esc 关闭
-ai drawer     右侧抽屉：连接设置 / 示例问题 / 检索来源 / 离线启动指引
+ai drawer     右侧抽屉：上方是提问区（输入框 + 提问 + 连接设置），
+              下方回答区**至少占抽屉高度的 50%**，展示回答与检索来源
 audio dock    右下角「古琴」：播放 / 暂停、音量、曲目与许可
 ```
 
@@ -131,7 +132,8 @@ POST http://localhost:8383/api/llm/chat
 - **降级**：连不上时给出可复制的启动命令（`tea_agent --port 8383 --workspace …`），不影响本地时间线；
   可以「重试」或改连接设置。
 - **设置**：服务地址 / provider / model 存在 `localStorage`（`lq.a2.config.v1`），可一键恢复默认。
-- 每篇作品带一个预设问题，点「问 AI」会把作品、作年、地点、原文、已注词语一起送进 prompt。
+- 每篇作品带一个预设问题：点「问 AI」会自动填进输入框（可改可再问），并把作品、作年、地点、原文、已注词语一起送进 prompt。
+- 回答按 Markdown 渲染（粗体、有序/无序列表、标题行、链接），内容先转义再放行，原始 HTML 不会执行。
 
 > 回答默认标注「AI 生成 · 未经审核」。文学史与系年问题请以正式出版物为准。
 
@@ -193,7 +195,7 @@ li-qingzhao/
 ├─ src/
 │  ├─ styles.css          全部样式（三栏 / 词笺 / 灯箱 / 抽屉 / 深色 / 响应式 / 打印）
 │  ├─ data-life.js        16 条生平与作品 + 五段 + 行迹
-│  ├─ core.js             纯逻辑：排序 / 校验 / 导航 / 统计 / 文本 / 提问 / 检索解析
+│  ├─ core.js             纯逻辑：排序 / 校验 / 导航 / 统计 / 文本 / 提问 / 检索解析 / 回答渲染
 │  ├─ audio.js            古琴播放器（懒加载 / 淡入淡出 / 音量 / 后台压低 / 记忆）
 │  ├─ online.js           tea_a2 探测与提问（不碰 DOM）
 │  └─ app.js              渲染 / 滚动进度 / 导航高亮 / 灯箱 / 音乐 / AI 抽屉
@@ -204,14 +206,14 @@ li-qingzhao/
    ├─ fetch-images.mjs    Wikimedia 抓图 + 古琴曲 + 生成署名
    ├─ serve.mjs           本地静态服务器（5179，支持 Range）
    ├─ build-single.mjs    单文件构建（图片 + 音频内联）
-   ├─ selftest.mjs       92 项离线断言
-   └─ verify.mjs         58 项无头浏览器端到端（--online 再加 2 项）
+   ├─ selftest.mjs       98 项离线断言
+   └─ verify.mjs         60 项无头浏览器端到端（--online 再加 2 项）
 ```
 
 ## 自检
 
 ```bash
-node li-qingzhao/tools/selftest.mjs        # 数据 / 图片 / 署名 / 音频 / 纯逻辑 / 提问词 / 检索解析 / 播放器
+node li-qingzhao/tools/selftest.mjs        # 数据 / 图片 / 署名 / 音频 / 纯逻辑 / 提问词 / 检索解析 / 回答渲染 / 播放器
 node li-qingzhao/tools/verify.mjs          # 无头 Chrome：三栏、图片、词笺、灯箱、音乐、AI 降级、移动端、深色
 node li-qingzhao/tools/verify.mjs --online # 再跑一次真实 tea_a2（需 8383 在跑）
 ```
