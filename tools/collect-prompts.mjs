@@ -20,25 +20,45 @@ const SESSIONS = path.join(ROOT, '.tea_agent_run/sessions');
 const DRY = process.argv.includes('--dry-run');
 const VERBOSE = process.argv.includes('--verbose');
 
-// ── 项目表：目录 + 关键词（小写匹配）。顺序即匹配优先级，具体项目在前 ──────────
+// ── 项目表 ────────────────────────────────────────────────────────────────
+// keys：归类关键词（小写）；origin：'local' = 这台机器上用 tea_a2 做出来的，
+//       'imported' = 从别处搬进来的（本机没有它的创建提示词，最多只有搬进来之后的改动输入）。
+// origin 依据 git 首次入库的提交，写在 from 里，方便日后核对。
 const PROJECTS = [
-  { dir: 'bilibili', name: '📺 B 站 digest', keys: ['bilibili', 'bili.py', 'bv1', 'b站', '稍后观看', '稍后再看', '字幕', 'asr', 'sensevoice'] },
-  { dir: 'zhihu', name: '📚 知乎 digest', keys: ['zhihu', '知乎'] },
-  { dir: 'tea-select', name: '🦊 tea_a2 划词助手', keys: ['tea-select', '划词', 'firefox', 'addon', '识图'] },
-  { dir: 'pottery', name: '🏺 中国陶器史', keys: ['pottery', '陶器'] },
-  { dir: 'meow-mart', name: '🐱 喵屋便利店', keys: ['喵屋', 'meow-mart', 'meow mart'] },
-  { dir: 'tcm-herb', name: '🌿 中药大全', keys: ['tcm', '中药', '药材'] },
-  { dir: 'sticky-notes', name: '📌 便笺', keys: ['便笺', 'sticky'] },
-  { dir: 'snake-race', name: '🐍 贪吃蛇竞赛', keys: ['贪吃蛇', 'snake-race', 'snake arena'] },
-  { dir: 'attention-film', name: '🎬 Self-Attention 短片', keys: ['attention', '自注意力', '短片'] },
-  { dir: 'iptv-player', name: '📺 IPTV 剧场', keys: ['iptv', '直播源'] },
-  { dir: 'rubiks-cube', name: '🧊 三阶魔方教程', keys: ['魔方', 'rubik'] },
-  { dir: 'endfield-ship', name: '🚀 终末地 · 舰桥观测舱', keys: ['终末地', 'endfield', '舰桥'] },
-  { dir: 'ai-town', name: '🏘️ AI 小镇', keys: ['ai 小镇', 'ai-town', 'ai小镇'] },
-  { dir: 'sanguosha-ai', name: '⚔️ AI 三国杀', keys: ['三国杀', 'sanguosha'] },
-  { dir: 'video_analysis', name: '📼 本地视频分析', keys: ['video_analysis', '视频分析', '抽帧'] },
-  { dir: 'GoDot', name: '🎮 GoDot · 三国肉鸽', keys: ['godot'] },
-  { dir: 'zhanqiao', name: '🏗️ 青岛栈桥建模', keys: ['栈桥', 'zhanqiao'] },
+  { dir: 'bilibili', name: '📺 B 站 digest', origin: 'imported', from: '2026-11-04 `feat(bili/zhihu): …搬进这个仓库`',
+    keys: ['bilibili', 'bili.py', 'bv1', 'b站', '稍后观看', '稍后再看', '字幕', 'asr', 'sensevoice'] },
+  { dir: 'zhihu', name: '📚 知乎 digest', origin: 'imported', from: '2026-11-04 `feat(bili/zhihu): …搬进这个仓库`',
+    keys: ['zhihu', '知乎'] },
+  { dir: 'tea-select', name: '🦊 tea_a2 划词助手', origin: 'local', from: '2026-11-03 `feat(tea-select): Firefox 划词扩展`',
+    keys: ['tea-select', '划词', 'firefox', 'addon', '识图'] },
+  { dir: 'pottery', name: '🏺 中国陶器史', origin: 'local', from: '2026-11-22 `feat(pottery): 新增「中国陶器史」`',
+    keys: ['pottery', '陶器'] },
+  { dir: 'meow-mart', name: '🐱 喵屋便利店', origin: 'imported', from: '2026-11-02 `feat: 提交 demo 全部代码`（随首批 `src/` 入库）',
+    keys: ['喵屋', 'meow-mart', 'meow mart'] },
+  { dir: 'tcm-herb', name: '🌿 中药大全', origin: 'local', from: '2026-11-21 `feat(tcm-herb): 新增「中药大全」`',
+    keys: ['tcm', '中药', '药材'] },
+  { dir: 'sticky-notes', name: '📌 便笺', origin: 'local', from: '2026-11-03 `feat(sticky-notes)`',
+    keys: ['便笺', 'sticky'] },
+  { dir: 'snake-race', name: '🐍 贪吃蛇竞赛', origin: 'imported', from: '2026-11-02 `feat: 提交 demo 全部代码`',
+    keys: ['贪吃蛇', 'snake-race', 'snake arena'] },
+  { dir: 'attention-film', name: '🎬 Self-Attention 短片', origin: 'imported', from: '2026-11-02 `feat: 提交 demo 全部代码`',
+    keys: ['attention', '自注意力', '短片'] },
+  { dir: 'iptv-player', name: '📺 IPTV 剧场', origin: 'imported', from: '2026-11-02 `feat: 提交 demo 全部代码`',
+    keys: ['iptv', '直播源'] },
+  { dir: 'rubiks-cube', name: '🧊 三阶魔方教程', origin: 'local', from: '2026-11-06 `feat(rubiks-cube)`',
+    keys: ['魔方', 'rubik'] },
+  { dir: 'endfield-ship', name: '🚀 终末地 · 舰桥观测舱', origin: 'local', from: '2026-11-17 `feat(endfield-ship)`',
+    keys: ['终末地', 'endfield', '舰桥'] },
+  { dir: 'ai-town', name: '🏘️ AI 小镇', origin: 'local', from: '2026-11-03 `feat(ai-town)`',
+    keys: ['ai 小镇', 'ai-town', 'ai小镇'] },
+  { dir: 'sanguosha-ai', name: '⚔️ AI 三国杀', origin: 'local', from: '2026-11-05 `feat(sanguosha-ai)`',
+    keys: ['三国杀', 'sanguosha'] },
+  { dir: 'video_analysis', name: '📼 本地视频分析', origin: 'local', from: '2026-11-08 `feat(video-analysis)`',
+    keys: ['video_analysis', '视频分析', '抽帧'] },
+  { dir: 'GoDot', name: '🎮 GoDot · 三国肉鸽', origin: 'imported', from: '2026-11-02 `feat: 提交 demo 全部代码`',
+    keys: ['godot'] },
+  { dir: 'zhanqiao', name: '🏗️ 青岛栈桥建模', origin: 'local', from: '2026-11-04 `feat(zhanqiao)`',
+    keys: ['栈桥', 'zhanqiao'] },
 ];
 
 // 仓库级：这些消息讲的是整个 a2_demo（索引、README、目录结构…），不归属某个子项目
@@ -196,11 +216,18 @@ function renderProjectPrompt(project) {
   }
   const lines = [];
   lines.push('# 🧾 用户输入（原始需求）', '');
-  lines.push('> 本项目由 [tea_a2](https://github.com/sunkwei/tea_a2) 生成。下面是把它做出来、以及后来改动它的**用户输入原文**，');
-  lines.push('> 按时间顺序摘自本工作区的会话记录（`.tea_agent_run/sessions/`）。');
+  if (project.origin === 'local') {
+    lines.push('> 本项目是**这台机器上用 [tea_a2](https://github.com/sunkwei/tea_a2) 从头做出来的**。');
+    lines.push('> 下面是把它做出来、以及后来改动它的**用户输入原文**，按时间顺序摘自本工作区的会话记录（`.tea_agent_run/sessions/`）。');
+  } else {
+    lines.push('> ⚠️ 本项目**不是在本机创建的**，是搬进本仓库的（' + project.from + '）。');
+    lines.push('> 本机没有「创建它的提示词」，下面只是**搬进来之后在本机改动它**的用户输入原文，');
+    lines.push('> 按时间顺序摘自本工作区的会话记录（`.tea_agent_run/sessions/`）。');
+  }
   lines.push('> 已剔除「继续」「嗯」「提交,推送」这类没有信息量的指令、纯夸奖和工具回填的系统消息，');
   lines.push('> 保留的句子未改动措辞。全仓库的收录情况见 [`docs/PROMPTS.md`](../docs/PROMPTS.md)。', '');
-  lines.push(`项目目录：\`${project.dir}/\` · 收录 **${list.length}** 条输入 · 来自 **${bySession.size}** 个会话`, '');
+  lines.push(`项目目录：\`${project.dir}/\` · 来源：${project.origin === 'local' ? '本机创建' : '外部引入'} · ` +
+    `收录 **${list.length}** 条输入 · 来自 **${bySession.size}** 个会话`, '');
   const groups = [...bySession.values()].sort((a, b) => a.session.createdAt.localeCompare(b.session.createdAt));
   for (const { session, items } of groups) {
     lines.push('---', '');
@@ -230,38 +257,65 @@ for (const project of PROJECTS) {
 }
 
 // ── 写 docs/PROMPTS.md ──────────────────────────────────────────────────
+// 三类项目分开写清楚：本机创建且留档 / 本机创建但会话已清理 / 外部引入（本机没有创建提示词）
 const repoInputs = entries.filter((e) => e.project === '__repo__');
-const missing = PROJECTS.filter((p) => !(byProject.get(p.dir) || []).length);
+const local = PROJECTS.filter((p) => p.origin === 'local');
+const imported = PROJECTS.filter((p) => p.origin === 'imported');
+const localDone = local.filter((p) => (byProject.get(p.dir) || []).length);
+const localMissing = local.filter((p) => !(byProject.get(p.dir) || []).length);
+const importedDone = imported.filter((p) => (byProject.get(p.dir) || []).length);
 
 const rows = PROJECTS.map((p) => {
   const w = written.find((x) => x.dir === p.dir);
   const cell = w ? `[\`${p.dir}/PROMPT.md\`](../${p.dir}/PROMPT.md)` : '—';
-  return `| ${p.name} | \`${p.dir}/\` | ${cell} | ${w ? w.count : 0} | ${w ? w.sessions : 0} |`;
+  const origin = p.origin === 'local' ? '本机创建' : '外部引入';
+  return `| ${p.name} | \`${p.dir}/\` | ${origin} | ${cell} | ${w ? w.count : 0} | ${w ? w.sessions : 0} |`;
 }).join('\n');
+
+const bullet = (list, withFrom) =>
+  list.map((p) => `- ${p.name}（\`${p.dir}/\`）${withFrom ? ' —— ' + p.from : ''}`).join('\n');
 
 const promptIndex = [
   '# 🧾 用户输入归档（PROMPT）',
   '',
-  '本仓库的每个项目都是 tea_a2 按用户一段段输入长出来的。这一页是「原始输入」的总索引：',
+  '本仓库里**本机创建**的项目，都是 tea_a2 按用户一段段输入做出来的；',
   '每个项目目录下的 **`PROMPT.md`** 存着它自己那份输入，不放在别处、也不靠回忆。',
+  '',
+  '有几种情况要分清：',
+  '',
+  '- **本机创建 + 有留档**：创建与后续改动的输入都在，`PROMPT.md` 是完整的；',
+  '- **本机创建 + 会话已清理**：项目确实是在这台机器上做的，但当时的会话记录被轮转掉了，只能补录；',
+  '- **外部引入**：项目不是在本机创建的（随某次提交搬进仓库），**本机根本没有「创建它的提示词」**；',
+  `  这类项目不承诺有 \`PROMPT.md\`，即便有，也只记搬进来之后在本机的改动。`,
   '',
   `> 生成方式：\`npm run prompts:build\`（[\`tools/collect-prompts.mjs\`](../tools/collect-prompts.mjs)），` +
     `从 \`.tea_agent_run/sessions/\` 的会话记录里抽取、过滤、按项目归档。`,
   '',
   '## 收录情况',
   '',
-  '| 项目 | 目录 | 输入归档 | 条数 | 会话 |',
-  '|------|------|---------|-----:|-----:|',
+  '| 项目 | 目录 | 来源 | 输入归档 | 条数 | 会话 |',
+  '|------|------|------|---------|-----:|-----:|',
   rows,
   '',
-  '## 为什么有些项目没有 PROMPT.md',
+  '## 外部引入的项目（本机没有创建提示词）',
   '',
-  '本工作区的会话记录（`.tea_agent_run/sessions/`）从 **2026-11-08** 才开始留存，更早的会话已随工作区轮转清理。',
-  '因此 2026-11-02 / 11-03 建的那批项目（贪吃蛇、便笺、魔方、IPTV、终末地舰桥、AI 小镇、三国杀、中药大全、栈桥、Godot…）',
-  '**原始输入没有本地留档**，现在只能从 git 提交信息里看出做了什么，看不出当时是怎么说的。',
+  '这些项目随早期提交搬进仓库，创建过程不在这台机器上，下面标了它首次入库的提交：',
+  '',
+  bullet(imported, true),
+  '',
+  importedDone.length
+    ? `其中 ${importedDone.map((p) => `\`${p.dir}/\``).join('、')} 在本机做过改动，所以有 \`PROMPT.md\`，` +
+      '但文件开头写明了「只含搬进来之后的改动」——别把它当成原始需求。'
+    : '它们都没有本机改动记录，因此也都没有 `PROMPT.md`。',
+  '',
+  '## 本机创建、但会话已清理的项目',
+  '',
+  '这些项目确实是在这台机器上做出来的，但 `.tea_agent_run/sessions/` 只留了本工作区的一部分会话',
+  '（2026-11-08 起的几次；另有项目是在别的 workspace 里做的，记录不在这个目录），所以现在抽不到输入：',
+  '',
+  bullet(localMissing, true),
   '',
   '补录办法：把当时的输入原文写进 `<项目>/PROMPT.md`（格式照抄已有文件），或补进 `tools/collect-prompts.mjs` 的解析逻辑后重跑。',
-  '没留档的项目清单：' + missing.map((p) => `\`${p.dir}/\``).join('、'),
   '',
   '## 仓库级输入',
   '',
@@ -293,7 +347,8 @@ if (!DRY) fs.writeFileSync(path.join(ROOT, 'docs/PROMPTS.md'), promptIndex, 'utf
 
 console.log(`扫描 ${stats.sessions} 个会话 / ${stats.raw} 条用户消息 → 收录 ${stats.kept} 条，丢弃 ${stats.dropped} 条`);
 for (const w of written) console.log(`  ✅ ${w.dir}/PROMPT.md  ${w.count} 条 / ${w.sessions} 个会话`);
-console.log(`  📇 docs/PROMPTS.md （仓库级输入 ${repoInputs.length} 条；未留档项目 ${missing.length} 个）`);
+console.log(`  📇 docs/PROMPTS.md （仓库级输入 ${repoInputs.length} 条；` +
+  `本机创建未留档 ${localMissing.length} 个；外部引入 ${imported.length} 个，其中 ${importedDone.length} 个只有本地改动输入）`);
 if (VERBOSE) {
   console.log('\n丢弃明细：');
   for (const d of dropLog) console.log(`  ✗ [${d.reason}] ${d.text.replace(/\s+/g, ' ').slice(0, 90)}`);

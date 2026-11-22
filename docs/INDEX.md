@@ -174,8 +174,12 @@ tea_a2_demo/
 
 ## 🧾 每个项目的用户输入
 
-每个项目目录下的 **`PROMPT.md`** 记着它当初是怎么被要求做出来的（用户输入原文，已剔除「继续」「提交,推送」这类无效指令）。
-已留档：`meow-mart/`、`tea-select/`、`bilibili/`、`pottery/`；早期项目的会话已清理，只有 git 提交信息。
+**本机创建**的项目，目录下的 **`PROMPT.md`** 记着它当初是怎么被要求做出来的（用户输入原文，已剔除「继续」「提交,推送」这类无效指令）。
+- 本机创建 + 留档：`tea-select/`、`pottery/`
+- 本机创建但会话没留下：中药大全、便笺、魔方、终末地、AI 小镇、三国杀、视频分析、栈桥（无 `PROMPT.md`，可补录）
+- 外部引入（不是本机创建的）：`bilibili/`、`zhihu/`、`meow-mart/`、贪吃蛇、短片、IPTV、GoDot —— 本机没有创建提示词；
+  `bilibili/`、`meow-mart/` 的 `PROMPT.md` 只记搬进来之后的改动
+
 总表与过滤规则见 [`PROMPTS.md`](PROMPTS.md)，重新生成用 `npm run prompts:build`。
 
 ---
