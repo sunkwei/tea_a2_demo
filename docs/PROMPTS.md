@@ -19,21 +19,21 @@
 | 📺 B 站 digest | `bilibili/` | 外部引入 | [`bilibili/PROMPT.md`](../bilibili/PROMPT.md) | 13 | 3 |
 | 📚 知乎 digest | `zhihu/` | 外部引入 | — | 0 | 0 |
 | 🎹 琴房 · 钢琴练习 | `piano/` | 本机创建 | [`piano/PROMPT.md`](../piano/PROMPT.md) | 3 | 1 |
-| 🎨 彩色标签（Firefox 扩展） | `firefox-tab-colors/` | 本机创建 | [`firefox-tab-colors/PROMPT.md`](../firefox-tab-colors/PROMPT.md) | 2 | 2 |
-| 🦊 tea_a2 划词助手 | `tea-select/` | 本机创建 | [`tea-select/PROMPT.md`](../tea-select/PROMPT.md) | 2 | 1 |
+| 🎨 彩色标签（Firefox 扩展） | `firefox-tab-colors/` | 本机创建 | [`firefox-tab-colors/PROMPT.md`](../firefox-tab-colors/PROMPT.md) | 3 | 2 |
+| 🦊 tea_a2 划词助手 | `tea-select/` | 本机创建 | [`tea-select/PROMPT.md`](../tea-select/PROMPT.md) | 6 | 2 |
 | 🏺 中国陶器史 | `pottery/` | 本机创建 | [`pottery/PROMPT.md`](../pottery/PROMPT.md) | 4 | 1 |
 | 🪷 李清照 · 漱玉词 | `li-qingzhao/` | 本机创建 | [`li-qingzhao/PROMPT.md`](../li-qingzhao/PROMPT.md) | 1 | 1 |
 | 🐱 喵屋便利店 | `meow-mart/` | 外部引入 | [`meow-mart/PROMPT.md`](../meow-mart/PROMPT.md) | 1 | 1 |
-| 🌿 中药大全 | `tcm-herb/` | 本机创建 | — | 0 | 0 |
+| 🌿 中药大全 | `tcm-herb/` | 本机创建 | [`tcm-herb/PROMPT.md`](../tcm-herb/PROMPT.md) | 6 | 1 |
 | 📌 便笺 | `sticky-notes/` | 本机创建 | — | 0 | 0 |
 | 🐍 贪吃蛇竞赛 | `snake-race/` | 外部引入 | — | 0 | 0 |
 | 🎬 Self-Attention 短片 | `attention-film/` | 外部引入 | — | 0 | 0 |
 | 📺 IPTV 剧场 | `iptv-player/` | 外部引入 | — | 0 | 0 |
 | 🧊 三阶魔方教程 | `rubiks-cube/` | 本机创建 | — | 0 | 0 |
 | 🚀 终末地 · 舰桥观测舱 | `endfield-ship/` | 本机创建 | — | 0 | 0 |
-| 🏘️ AI 小镇 | `ai-town/` | 本机创建 | — | 0 | 0 |
-| ⚔️ AI 三国杀 | `sanguosha-ai/` | 本机创建 | — | 0 | 0 |
-| 📼 本地视频分析 | `video_analysis/` | 本机创建 | — | 0 | 0 |
+| 🏘️ AI 小镇 | `ai-town/` | 本机创建 | [`ai-town/PROMPT.md`](../ai-town/PROMPT.md) | 6 | 2 |
+| ⚔️ AI 三国杀 | `sanguosha-ai/` | 本机创建 | [`sanguosha-ai/PROMPT.md`](../sanguosha-ai/PROMPT.md) | 3 | 2 |
+| 📼 本地视频分析 | `video_analysis/` | 本机创建 | [`video_analysis/PROMPT.md`](../video_analysis/PROMPT.md) | 2 | 1 |
 | 🎮 GoDot · 三国肉鸽 | `GoDot/` | 外部引入 | — | 0 | 0 |
 | 🏗️ 青岛栈桥建模 | `zhanqiao/` | 本机创建 | — | 0 | 0 |
 
@@ -56,13 +56,9 @@
 这些项目确实是在这台机器上做出来的，但 `.tea_agent_run/sessions/` 只留了本工作区的一部分会话
 （2026-11-08 起的几次；另有项目是在别的 workspace 里做的，记录不在这个目录），所以现在抽不到输入：
 
-- 🌿 中药大全（`tcm-herb/`） —— 2026-11-21 `feat(tcm-herb): 新增「中药大全」`
 - 📌 便笺（`sticky-notes/`） —— 2026-11-03 `feat(sticky-notes)`
 - 🧊 三阶魔方教程（`rubiks-cube/`） —— 2026-11-06 `feat(rubiks-cube)`
 - 🚀 终末地 · 舰桥观测舱（`endfield-ship/`） —— 2026-11-17 `feat(endfield-ship)`
-- 🏘️ AI 小镇（`ai-town/`） —— 2026-11-03 `feat(ai-town)`
-- ⚔️ AI 三国杀（`sanguosha-ai/`） —— 2026-11-05 `feat(sanguosha-ai)`
-- 📼 本地视频分析（`video_analysis/`） —— 2026-11-08 `feat(video-analysis)`
 - 🏗️ 青岛栈桥建模（`zhanqiao/`） —— 2026-11-04 `feat(zhanqiao)`
 
 补录办法：把当时的输入原文写进 `<项目>/PROMPT.md`（格式照抄已有文件），或补进 `tools/collect-prompts.mjs` 的解析逻辑后重跑。
