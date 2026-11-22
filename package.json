@@ -61,7 +61,13 @@
     "test:piano": "node piano/tools/selftest.mjs",
     "piano:verify": "node piano/tools/verify.mjs",
     "tabcolors:serve": "node tab-colors-dev/tools/serve.mjs 8787",
-    "tabcolors:e2e": "node tab-colors-dev/tools/e2e.mjs"
+    "tabcolors:e2e": "node tab-colors-dev/tools/e2e.mjs",
+    "test:a2share": "python -m unittest discover -s a2-share/pc/tests -t a2-share/pc",
+    "a2share:selftest": "python a2-share/pc/a2_share.py --selftest",
+    "a2share:e2e": "python a2-share/tools/e2e.py",
+    "a2share:smoke": "python a2-share/tools/smoke.py",
+    "a2share:build": "cd a2-share/phone && gradlew.bat assembleRelease",
+    "a2share:test": "cd a2-share/phone && gradlew.bat testDebugUnitTest"
   },
   "keywords": [
     "three.js",

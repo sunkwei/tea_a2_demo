@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "note": "两端共用的黄金样本（PROTOCOL.md §11）。修改协议字段时只增不改，旧样本保留。",
+  "qr": {
+    "valid": [
+      {
+        "payload": "A2S1-K5Q2M7Z3XJ4W6NRA-C0A80117-22C3-BVQFQF3-SUNKW-X",
+        "expect": {
+          "secret": "K5Q2M7Z3XJ4W6NRA",
+          "ip": "192.168.1.23",
+          "port": 8899,
+          "issued": 1795342523,
+          "name": "SUNKW-X",
+          "length": 51
+        }
+      },
+      {
+        "payload": "A2S1-K5Q2M7Z3XJ4W6NRA-C0A80117-22C3-BVQFQF3",
+        "expect": {
+          "secret": "K5Q2M7Z3XJ4W6NRA",
+          "ip": "192.168.1.23",
+          "port": 8899,
+          "issued": 1795342523,
+          "name": null,
+          "length": 43
+        }
+      }
+    ],
+    "invalid": [
+      {"payload": "A2S2-K5Q2M7Z3XJ4W6NRA-C0A80117-22C3-BVQFQF3", "error": "protocol_version"},
+      {"payload": "A2S1-K5Q2M7Z3XJ4W6NR-C0A80117-22C3-BVQFQF3", "error": "bad_payload"},
+      {"payload": "A2S1-K5Q2M7Z3XJ4W6NRA-7F000001-22C3-BVQFQF3", "error": "bad_address"},
+      {"payload": "A2S1-K5Q2M7Z3XJ4W6NRA-C0A80117-0000-BVQFQF3", "error": "bad_port"},
+      {"payload": "a2s1-k5q2m7z3xj4w6nra-c0a80117-22c3-bvqfqf3", "error": "bad_payload"}
+    ]
+  },
+  "short_code": {
+    "secret": "K5Q2M7Z3XJ4W6NRA",
+    "expect": "093511",
+    "rule": "HMAC-SHA256(key=UTF8(secret), msg=\"a2s-pair\") 前 4 字节 BE % 1000000，6 位补零"
+  },
+  "pair_request": {
+    "v": 1,
+    "method": "qr",
+    "secret": "K5Q2M7Z3XJ4W6NRA",
+    "device": {
+      "id": "6f0c2a1e-3b4d-4c5e-8f90-123456789abc",
+      "name": "Xiaomi 14",
+      "model": "2311DRK48C",
+      "android": 34,
+      "app": "1.0.0"
+    }
+  },
+  "pair_response": {
+    "v": 1,
+    "token": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "session": {"sid": "a1b2c3d4", "generation": 4},
+    "pc": {"id": "8c1d2e3f-4a5b-4c6d-8e9f-abcdefabcdef", "name": "SUNKW-X1", "platform": "win32"},
+    "limits": {
+      "max_upload_bytes": 4294967296,
+      "max_chunk_bytes": 8388608,
+      "clipboard_text_bytes": 1048576
+    },
+    "server_time": 1795342523
+  },
+  "init_request": {
+    "v": 1,
+    "upload_id": "0b9e7c1a-2d3e-4f50-9a1b-2c3d4e5f6071",
+    "kind": "file",
+    "name": "报告 v2.pdf",
+    "size": 5242880,
+    "mime": "application/pdf",
+    "created_at": 1795342523000,
+    "sha256": null
+  },
+  "error_envelope": {
+    "error": {
+      "code": "offset_conflict",
+      "message": "offset 1200 != received 4096",
+      "retryable": true,
+      "hint": "从 received 继续",
+      "request_id": "a1b2c3d4",
+      "received": 4096
+    }
+  },
+  "safe_name": {
+    "cases": [
+      {"raw": "../../etc/passwd", "expect": "passwd"},
+      {"raw": "报告 v2.pdf", "expect": "报告 v2.pdf"},
+      {"raw": "CON", "expect": "_CON"},
+      {"raw": "con.txt", "expect": "_con.txt"},
+      {"raw": "a.", "expect": "a"},
+      {"raw": "  spaced  ", "expect": "spaced"},
+      {"raw": "a:b*c?d.txt", "expect": "a_b_c_d.txt"},
+      {"raw": "nul\u0007.txt", "expect": "_nul.txt"}
+    ]
+  }
+}

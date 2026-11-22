@@ -37,3 +37,10 @@ __pycache__/
 
 # 调试残渣
 /ERR
+
+# a2-share 手机端（Android）
+a2-share/phone/local.properties
+a2-share/phone/.gradle/
+a2-share/phone/build/
+a2-share/phone/app/build/
+a2-share/phone/.kotlin/

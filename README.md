@@ -2,7 +2,7 @@
 
 # 🎪 a2_demo · 多项目实验场
 
-**18 个各自独立、打开就能跑的小项目**
+**19 个各自独立、打开就能跑的小项目**
 3D 场景 · 纯前端小应用 · LLM 玩法 · 内容抓取 · 素材与建模
 
 `npm install` → `npm run dev` → <http://127.0.0.1:5173/>
@@ -156,6 +156,12 @@
 <tr>
 <td width="50%" valign="top">
   <a href="zhanqiao/README.md"><img src="docs/banners/zhanqiao.svg" width="400" alt="青岛栈桥 &amp; 回澜阁"></a>
+
+### 📲 a2_share · 隔空投送
+
+<https://github.com/sunkwei/tea_a2_demo> 下的 `a2-share/`：PC 端跑一条命令出二维码，手机扫一下就把文件、剪贴板直传到电脑。
+
+  <a href="a2-share/README.md"><img src="docs/banners/a2-share.svg" width="400" alt="a2_share · 隔空投送"></a>
   <p><b>🏗️ 青岛栈桥 &amp; 回澜阁</b> · Zhanqiao Model<br>
   <sub>按真实物理尺寸的 Blender 建模 + 尺寸校验脚本 · Blender + Python<br>
   <code>zhanqiao/</code> · 打开 <code>.blend</code> · <a href="zhanqiao/README.md">说明</a></sub></p>
@@ -286,7 +292,7 @@ npm run preview    # 本地预览构建结果
 | `npm run test:lqz` · `npm run lqz:verify` · `npm run lqz:build` · `npm run lqz:serve` | 李清照断言 · 端到端 · 单文件版 · 本地服务器 |
 | `npm run test:endfield` · `npm run endfield:verify` · `npm run endfield:serve` | 终末地断言 · 端到端 · 本地服务器 |
 | `npm run sgss:web` · `npm run test:sgss` · `npm run sgss:doctor` | 三国杀网页版 · pytest · 环境自检 |
-| `npm run index:build` | 重生成 18 张横幅（`docs/banners/`）+ 根目录索引页 |
+| `npm run index:build` | 重生成 21 张横幅（`docs/banners/`）+ 根目录索引页 |
 | `npm run prompts:build` | 从会话记录抽取用户输入 → 各项目 `PROMPT.md` + `docs/PROMPTS.md` |
 
 ---
@@ -301,7 +307,7 @@ tea_a2_demo/
 ├── docs/
 │   ├── INDEX.md               # 全仓库索引（技术栈 / 依赖 / 自测约定）
 │   ├── PROMPTS.md             # 用户输入归档总表（哪些项目留了原始需求）
-│   └── banners/               # 18 张项目横幅 SVG（npm run index:build 生成）
+│   └── banners/               # 21 张项目横幅 SVG（npm run index:build 生成）
 ├── tools/
 │   ├── gen-project-index.mjs   # 横幅 + 落地索引页生成器（改文案改这里）
 │   └── collect-prompts.mjs     # 会话记录 → 各项目 PROMPT.md

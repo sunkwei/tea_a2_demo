@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">a2_share</string>
+    <string name="title_scan">扫码连接 PC</string>
+    <string name="title_settings">设置</string>
+
+    <!-- 主界面 -->
+    <string name="action_scan">扫码连接 PC</string>
+    <string name="action_send_clipboard">发送剪贴板</string>
+    <string name="action_settings">设置</string>
+    <string name="action_retry_all">重发全部</string>
+    <string name="action_clear_clipboard">一键清空剪贴板队列</string>
+    <string name="label_queue">队列</string>
+    <string name="label_empty_queue">队列是空的。分享文件或发送剪贴板后会出现在这里。</string>
+
+    <!-- 扫码 -->
+    <string name="scan_hint">把手机对准 PC 上的二维码</string>
+    <string name="scan_or_code">也可以直接输入 PC 上显示的 6 位短码</string>
+    <string name="action_input_code">输入短码</string>
+    <string name="action_pick_gallery">从相册选二维码</string>
+    <string name="hint_short_code">6 位短码</string>
+    <string name="error_no_camera_permission">没有相机权限，可以输入短码，或从相册选二维码</string>
+    <string name="error_bad_payload">这个二维码不是 a2_share 的配对码</string>
+    <string name="error_pair_failed">配对失败，请重试（还可试 %1$d 次）</string>
+    <string name="pair_success">已连接 %1$s</string>
+
+    <!-- 分享确认条 -->
+    <string name="share_confirm_title">发送到 PC</string>
+    <string name="share_confirm_hint">确认后才会发送</string>
+    <string name="action_send">发送</string>
+    <string name="action_cancel">取消</string>
+    <string name="share_text_preview">文字 · %1$d 字</string>
+    <string name="share_queued">已缓存，将在 PC 在线后发送</string>
+    <string name="share_sent">已发送</string>
+    <string name="share_failed">发送失败：%1$s</string>
+    <string name="share_no_wifi">当前不是 Wi-Fi，已缓存。等回到 Wi-Fi 再发</string>
+
+    <!-- 剪贴板 -->
+    <string name="clipboard_empty">剪贴板是空的</string>
+    <string name="clipboard_no_image">取不到剪贴板里的图片，请先保存到相册再分享</string>
+    <string name="clipboard_sent">剪贴板已发送</string>
+    <string name="clipboard_failed">剪贴板发送失败：%1$s</string>
+
+    <!-- 队列条目状态 -->
+    <string name="status_pending">待发</string>
+    <string name="status_sending">发送中</string>
+    <string name="status_sent">已发</string>
+    <string name="status_failed">失败</string>
+    <string name="status_expired">已过期</string>
+    <string name="status_missing">已失效</string>
+    <string name="status_canceled">已取消</string>
+    <string name="action_resend">重发</string>
+    <string name="action_delete">删除</string>
+    <string name="toast_evicted">缓存已满（%1$d 个文件），最早的一项『%2$s』已被移除</string>
+    <string name="toast_rejected">%1$s</string>
+
+    <!-- 通知 -->
+    <string name="channel_transfer">传输</string>
+    <string name="channel_connection">连接</string>
+    <string name="channel_alert">提醒</string>
+    <string name="notif_transfer_title">正在发送到 PC</string>
+    <string name="notif_transfer_done">已发送 %1$s</string>
+    <string name="notif_transfer_failed">发送失败：%1$s</string>
+    <string name="notif_connected">已连接 PC</string>
+    <string name="notif_rescan">请重新扫码连接 PC</string>
+    <string name="notif_evicted">缓存已满，最早的一项已被移除</string>
+
+    <!-- 设置 -->
+    <string name="settings_confirm">发送前显示确认条</string>
+    <string name="settings_confirm_desc">关闭后分享即发送，不会再询问。</string>
+    <string name="settings_background">后台与省电设置</string>
+    <string name="settings_background_desc">息屏传输需要放行后台限制，三步都点过更稳。</string>
+    <string name="settings_step_battery">电池优化白名单</string>
+    <string name="settings_step_autostart">允许自启动</string>
+    <string name="settings_step_notify">通知权限</string>
+    <string name="settings_privacy">隐私</string>
+    <string name="settings_privacy_desc">剪贴板只在你主动点「发送剪贴板」时读取；日志与历史只记元数据，不记内容。</string>
+    <string name="settings_clear_queue">清空整个队列</string>
+    <string name="settings_quota">缓存上限：5 个文件 + 10 条剪贴板。剪贴板 24 小时过期，文件 7 天过期。</string>
+    <string name="toast_cleared">队列已清空</string>
+</resources>

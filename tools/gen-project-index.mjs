@@ -21,6 +21,7 @@ const CATS = {
   llm: 'LLM 应用',
   data: '抓取与摘要',
   asset: '素材 · 扩展 · 建模',
+  tool: '工具 · 手机与桌面',
 };
 
 const FONT_CN = "'Noto Sans CJK SC','Source Han Sans SC','PingFang SC','Microsoft YaHei',sans-serif";
@@ -188,6 +189,14 @@ const projects = [
     dir: 'zhanqiao/', web: null, run: '打开 .blend',
     note: 'build_zhanqiao.py 生成模型，verify.py 复核尺寸',
   },
+  {
+    slug: 'a2-share', emoji: '📲', cat: 'tool',
+    cn: 'a2_share · 隔空投送', en: 'A2 SHARE',
+    tagline: '手机扫码 → PC 直接收文件与剪贴板',
+    tags: ['Python 3.11', 'Android/Kotlin', '局域网直传'],
+    dir: 'a2-share/', web: null, run: 'python a2-share/pc/a2_share.py',
+    note: 'PC 起二维码，手机扫码即连；断网缓存、回来自动补发',
+  },
 ];
 
 // ───────────────────────────── 横幅 SVG ─────────────────────────────
@@ -211,6 +220,7 @@ const PALETTE = {
   'video-analysis': ['#1b0f26', '#c66bff'],
   godot: ['#0e1c24', '#4fd6e0'],
   zhanqiao: ['#101a2c', '#6aa9ff'],
+  'a2-share': ['#0d1f16', '#4ad991'],
 };
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

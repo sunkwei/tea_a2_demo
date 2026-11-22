@@ -1,0 +1,16 @@
+[project]
+name = "a2-share"
+version = "1.0.0"
+description = "a2_share · 手机 → PC 局域网直传（PC 端接收模式）"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+a2_share = "a2share.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["a2share"]

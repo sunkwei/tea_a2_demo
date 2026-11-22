@@ -31,6 +31,8 @@ const PROJECTS = [
     keys: ['tab-colors', 'firefox-tab-colors', '标签颜色', '标签染色', 'tabGroups', '扩展', 'webextension', 'rdp'] },
   { dir: 'piano', name: '🎹 琴房 · 钢琴练习', origin: 'local', from: '2026-11-22 本机创建（本次会话）',
     keys: ['piano', '琴房', '钢琴', '多点触摸', '键宽', '音阶', '和弦', '跟弹'] },
+  { dir: 'a2-share', name: '📲 a2_share · 隔空投送', origin: 'local', from: '2026-11-22 本机创建（本次会话）',
+    keys: ['a2-share', 'a2_share', '隔空投送', '扫码配对', '分享目标', '二维码载荷', '剪贴板直传'] },
   { dir: 'zhihu', name: '📚 知乎 digest', origin: 'imported', from: '2026-11-04 `feat(bili/zhihu): …搬进这个仓库`',
     keys: ['zhihu', '知乎'] },
   { dir: 'tea-select', name: '🦊 tea_a2 划词助手', origin: 'local', from: '2026-11-03 `feat(tea-select): Firefox 划词扩展`',
