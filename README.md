@@ -90,11 +90,17 @@
 </td>
 </tr>
 <tr>
-<td colspan="2" width="100%" valign="top">
+<td width="50%" valign="top">
   <a href="li-qingzhao/index.html"><img src="docs/banners/li-qingzhao.svg" width="400" alt="李清照 · 漱玉词"></a>
   <p><b>🪷 李清照 · 漱玉词</b> · Li Qingzhao<br>
   <sub>一生与词：16 个节点串起生平与 14 篇作品 + 真实古琴《阳关三叠》背景音乐 · 原生 JS（file://）<br>
   <code>li-qingzhao/</code> · 双击 <code>index.html</code> · <a href="li-qingzhao/README.md">说明</a></sub></p>
+</td>
+<td width="50%" valign="top">
+  <a href="piano/index.html"><img src="docs/banners/piano.svg" width="400" alt="琴房 · 钢琴练习"></a>
+  <p><b>🎹 琴房</b> · Piano Studio<br>
+  <sub>多点触摸钢琴：十指同时按下即复音，瀑布流跟弹 / 认键 / 音阶和弦 + 加法合成音色 · 原生 JS（file://）<br>
+  <code>piano/</code> · 双击 <code>index.html</code> · <a href="piano/README.md">说明</a></sub></p>
 </td>
 </tr>
 <tr>
@@ -169,14 +175,15 @@
 | 8 | 🌿 中药大全 | `tcm-herb/` | 86 味药材 / 39 病症 / 22 验方 | 原生 JS（file://） | 双击 `index.html` | `npm run test:tcm` |
 | 9 | 🏺 中国陶器史 | `pottery/` | 两万年长幅时间线 + 实时合成配乐 | 原生 JS（file://） | 双击 `index.html` | `npm run test:pottery` |
 | 10 | 🪷 李清照 · 漱玉词 | `li-qingzhao/` | 一生与词：16 个节点 + 真实古琴配乐 | 原生 JS（file://） | 双击 `index.html` | `npm run test:lqz` |
-| 11 | 🏘️ AI 小镇 | `ai-town/` | LLM 实时生成一切文字的模拟经营 | Python + Tkinter | `python ai-town/main.py` | `python ai-town/main.py --selftest` |
-| 12 | ⚔️ AI 三国杀 | `sanguosha-ai/` | 三个大模型同台打三国杀 | Python + HTML5 | `npm run sgss:web` | `npm run test:sgss` |
-| 13 | 🦊 tea_a2 划词助手 | `tea-select/` | 划词即译 / 搜 / 总结 + 划图识图 | JS (MV3) | `web-ext run` | `node tea-select/tools/selftest.mjs` |
-| 14 | 📺 B 站 digest | `bilibili/` | 观看历史 → 字幕 → LLM 周报 | Python | `python bilibili/bili.py all` | — |
-| 15 | 📚 知乎 digest | `zhihu/` | 收藏夹 / 回答正文 → 摘要 | Python | `python zhihu/zhihu.py digest` | `python zhihu/tests/test_zhihu_llm_post.py` |
-| 16 | 📼 本地视频分析 | `video_analysis/` | 抽帧拼图 + 本地 ASR → 分析报告 | Python + ONNX | `python video_analysis/video_analysis.py <视频>` | — |
-| 17 | 🎮 GoDot 三国肉鸽 | `GoDot/` | Godot 4 项目：三国题材肉鸽 | Godot 4 | Godot 打开 | — |
-| 18 | 🏗️ 青岛栈桥建模 | `zhanqiao/` | 真实尺寸 Blender 建模 | Blender | 打开 `.blend` | `python zhanqiao/verify.py` |
+| 11 | 🎹 琴房 | `piano/` | 多点触摸钢琴：复音 / 瀑布流跟弹 / 认键 / 音阶和弦 | 原生 JS（file://） | 双击 `index.html` | `npm run test:piano` |
+| 12 | 🏘️ AI 小镇 | `ai-town/` | LLM 实时生成一切文字的模拟经营 | Python + Tkinter | `python ai-town/main.py` | `python ai-town/main.py --selftest` |
+| 13 | ⚔️ AI 三国杀 | `sanguosha-ai/` | 三个大模型同台打三国杀 | Python + HTML5 | `npm run sgss:web` | `npm run test:sgss` |
+| 14 | 🦊 tea_a2 划词助手 | `tea-select/` | 划词即译 / 搜 / 总结 + 划图识图 | JS (MV3) | `web-ext run` | `node tea-select/tools/selftest.mjs` |
+| 15 | 📺 B 站 digest | `bilibili/` | 观看历史 → 字幕 → LLM 周报 | Python | `python bilibili/bili.py all` | — |
+| 16 | 📚 知乎 digest | `zhihu/` | 收藏夹 / 回答正文 → 摘要 | Python | `python zhihu/zhihu.py digest` | `python zhihu/tests/test_zhihu_llm_post.py` |
+| 17 | 📼 本地视频分析 | `video_analysis/` | 抽帧拼图 + 本地 ASR → 分析报告 | Python + ONNX | `python video_analysis/video_analysis.py <视频>` | — |
+| 18 | 🎮 GoDot 三国肉鸽 | `GoDot/` | Godot 4 项目：三国题材肉鸽 | Godot 4 | Godot 打开 | — |
+| 19 | 🏗️ 青岛栈桥建模 | `zhanqiao/` | 真实尺寸 Blender 建模 | Blender | 打开 `.blend` | `python zhanqiao/verify.py` |
 
 > `shared/` 不是独立项目：它是 `bilibili/` 与 `zhihu/` 共用的登录态 + LLM 调用层。
 > 五个 LLM 相关应用（便笺 / 划词助手 / 三国杀 / 陶器史 / 李清照）默认连本机 `tea_a2`（`http://localhost:8383`）。
@@ -300,6 +307,7 @@ tea_a2_demo/
 ├── tcm-herb/                  # 🌿 中药大全（file:// 应用）
 ├── pottery/                   # 🏺 中国陶器史（file:// 应用）
 ├── li-qingzhao/               # 🪷 李清照 · 漱玉词（file:// 应用）
+├── piano/                     # 🎹 琴房 · 多点触摸钢琴练习（file:// 应用）
 ├── ai-town/                   # 🏘️ AI 小镇（Python + Tkinter）
 ├── sanguosha-ai/              # ⚔️ AI 三国杀（Python + 网页版）
 ├── bilibili/  zhihu/  shared/  # 📺📚 抓取 + 摘要（shared 为共用层）

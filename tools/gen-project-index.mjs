@@ -109,6 +109,14 @@ const projects = [
     note: '真实古琴录音《阳关三叠》+ Wikimedia 配图逐张署名',
   },
   {
+    slug: 'piano', emoji: '🎹', cat: 'web',
+    cn: '琴房 · 钢琴练习', en: 'PIANO STUDIO',
+    tagline: '多点触摸复音：瀑布流跟弹、认键、音阶和弦',
+    tags: ['WebAudio', 'Canvas', '多点触摸'],
+    dir: 'piano/', web: 'piano/index.html', run: '双击 piano/index.html',
+    note: '音色全部靠加法合成现场算出来，仓库里没有一个音频文件',
+  },
+  {
     slug: 'ai-town', emoji: '🏘️', cat: 'llm',
     cn: 'AI 小镇：无限人生', en: 'AI TOWN',
     tagline: 'LLM 现场生成居民、事件与主线的模拟经营',
