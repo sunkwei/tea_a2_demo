@@ -19,7 +19,7 @@
 | --- | --- | --- |
 | 直接打开 | 双击 `li-qingzhao/index.html` | 图片、音频都是本地文件，`file://` 下可用；AI 也可用（a2 的 CORS 是 `*`） |
 | 本地服务器 | `node li-qingzhao/tools/serve.mjs`（或 `npm run lqz:serve`） | http://127.0.0.1:5179 ；支持 Range 请求，音频的时长/拖动更稳 |
-| 单文件版 | `node li-qingzhao/tools/build-single.mjs`（或 `npm run lqz:build`） | 生成 `li-qingzhao/li-qingzhao.html`（约 14.4 MB，图片与音频全部内联），拷走一个文件即可 |
+| 单文件版 | `node li-qingzhao/tools/build-single.mjs`（或 `npm run lqz:build`） | 生成 `li-qingzhao/li-qingzhao.html`（约 14.4 MB，图片与音频全部内联），拷走一个文件即可；**该单文件版已入库** |
 
 ---
 
@@ -217,7 +217,7 @@ node li-qingzhao/tools/verify.mjs --online # 再跑一次真实 tea_a2（需 838
 ```
 
 `verify.mjs` 自己起一个临时静态服务器，不依赖 `serve.mjs`；浏览器路径可用 `CHROME_PATH` 指定。
-截图写到 `li-qingzhao/tools/shots/`（不入库）。
+截图写到 `li-qingzhao/tools/shots/`（首屏 / 时间线 / 灯箱 / 移动端 / 深色，共 5 张，**按要求入库**）。
 
 ---
 
