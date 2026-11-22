@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>测试页面 · 彩色标签</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <style>
+      body { font: 16px/1.6 system-ui, "Microsoft YaHei", sans-serif; margin: 40px; }
+      code { background: #eee; padding: 2px 6px; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <h1>彩色标签 · 测试页面</h1>
+    <p>用这个页面验证：标题前缀、彩色图标、标签分组。</p>
+    <p>标题会被脚本改成：<code>🔴 [工作] 测试页面 · 彩色标签</code></p>
+    <p>图标会被替换成带色环的版本。</p>
+    <p><a href="page2.html">第二个测试页</a> · <a href="page3.html">第三个测试页</a></p>
+    <script>
+      // 模拟 SPA 改标题，验证内容脚本能补回前缀
+      setTimeout(() => { document.title = '标题被页面改过了'; }, 3000);
+    </script>
+  </body>
+</html>

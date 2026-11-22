@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "彩色标签 · Tab Colors",
+  "version": "1.0.0",
+  "description": "在 Firefox 原生标签分组之上，为单个标签页加颜色标记（彩色图标 + 强制标题前缀）。",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "tab-colors@local",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "storage",
+    "menus",
+    "scripting"
+  ],
+  "optional_host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_title": "彩色标签",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon.svg",
+      "32": "icons/icon.svg",
+      "48": "icons/icon.svg"
+    }
+  },
+  "icons": {
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg"
+  },
+  "background": {
+    "scripts": [
+      "common.js",
+      "background.js"
+    ]
+  }
+}

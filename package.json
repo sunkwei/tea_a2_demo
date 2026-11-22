@@ -59,7 +59,9 @@
     "endfield:serve": "node endfield-ship/tools/serve.mjs",
     "endfield:shoot": "node endfield-ship/tools/shoot.mjs",
     "test:piano": "node piano/tools/selftest.mjs",
-    "piano:verify": "node piano/tools/verify.mjs"
+    "piano:verify": "node piano/tools/verify.mjs",
+    "tabcolors:serve": "node tab-colors-dev/tools/serve.mjs 8787",
+    "tabcolors:e2e": "node tab-colors-dev/tools/e2e.mjs"
   },
   "keywords": [
     "three.js",
@@ -80,7 +82,9 @@
     "piano",
     "multitouch",
     "web-audio",
-    "midi"
+    "midi",
+    "firefox",
+    "webextension"
   ],
   "license": "MIT",
   "dependencies": {

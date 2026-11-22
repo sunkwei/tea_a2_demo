@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>彩色标签</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <span class="brand">🎨 彩色标签</span>
+      <span class="hint" id="hint">给标签页单独上色</span>
+      <button id="refresh" class="ghost" title="刷新列表">⟳</button>
+    </header>
+
+    <div id="perm" class="perm hidden">
+      <div class="perm-text">
+        需要「访问所有网站」权限，才能改写标签标题与图标。
+      </div>
+      <button id="grant" class="primary">启用</button>
+    </div>
+
+    <main id="list"></main>
+
+    <details class="settings" id="settings">
+      <summary>设置</summary>
+      <div class="grid">
+        <label><input type="checkbox" id="opt-title" /> 标题前缀标记</label>
+        <label><input type="checkbox" id="opt-favicon" /> 彩色图标</label>
+        <label class="row-label">
+          图标样式
+          <select id="opt-iconmode">
+            <option value="ring">色环 + 站点图标</option>
+            <option value="solid">纯色块</option>
+          </select>
+        </label>
+        <label class="row-label">
+          标记文字
+          <input type="text" id="opt-text" placeholder="例如：工作" maxlength="12" />
+        </label>
+        <label class="row-label">
+          默认作用域
+          <select id="opt-scope">
+            <option value="tab">仅此标签</option>
+            <option value="site">整个站点</option>
+          </select>
+        </label>
+      </div>
+      <button id="restore" class="ghost wide">还原当前窗口所有标签的标题 / 图标</button>
+    </details>
+
+    <script src="../common.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
