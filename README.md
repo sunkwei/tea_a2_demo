@@ -12,7 +12,7 @@
 
 ## 🗂️ 项目总览
 
-这不只是「喵屋便利店」一个项目——仓库里还有 **16 个各自独立**的子项目：
+这不只是「喵屋便利店」一个项目——仓库里还有 **17 个各自独立**的子项目：
 前端可视化、LLM 应用、内容抓取摘要、Godot/Blender 素材一应俱全。
 **完整索引见 [`docs/INDEX.md`](docs/INDEX.md)**（含技术栈、启动方式、依赖关系、脚本速查）。
 
@@ -33,9 +33,10 @@
 | ⑭ | 📼 本地视频分析 | `video_analysis/` | 抽帧拼图 + 本地 ASR → LLM 写分析报告 | `python video_analysis/video_analysis.py <视频文件>` |
 | ⑮ | 🚀 终末地·舰桥观测舱 | `endfield-ship/` | 明日方舟风格飞船内舱 + ARK 风格 HUD（Three.js） | `npm run dev` |
 | ⑯ | 🌿 中药大全 | `tcm-herb/` | 86 味药材图鉴 + 39 个病症（含老年病种）+ 22 首验方，离线可用 | 双击 `index.html` |
+| ⑰ | 🏺 中国陶器史 | `pottery/` | 两万年窑火：20 件器物长幅时间线（年代 / 实物图 / 点评），点图放大 + 实时合成背景音乐 + 可选 AI 问答 | 双击 `index.html` |
 
 >
-> 三个 LLM 相关应用（便笺 / 划词助手 / 三国杀）默认连本机 `tea_a2`（`http://localhost:8383`）；
+> 四个 LLM 相关应用（便笺 / 划词助手 / 三国杀 / 陶器史）默认连本机 `tea_a2`（`http://localhost:8383`）；
 > `shared/` 是 `bilibili/` 与 `zhihu/` 共用的登录态 + LLM 调用层。
 
 ---

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="中国陶器发展史：从两万年前仙人洞、玉蟾岩的陶片，到彩陶、黑陶、原始瓷、青瓷、唐三彩、宋五大名窑、元青花、明清彩瓷，直到现代工业陶瓷。长幅时间线 + 实物图 + 可选 tea_a2 联网问答。" />
+  <title>中国陶器史 · 两万年窑火</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%BA%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <a class="skip" href="#timeline">跳到时间线</a>
+  <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="kicker">中国 · 两万年窑火</p>
+      <h1>中国陶器史</h1>
+      <p class="hero-sub">从两万年前的一把火，到芯片里的一层陶瓷</p>
+      <p class="hero-intro" id="heroIntro"></p>
+      <ul class="stats" id="heroStats"></ul>
+      <p class="hero-hint">
+        向下滚动，沿时间线走 <span aria-hidden="true">↓</span>
+        <span class="hero-hint-sub">点击实物图可放大 · 点「问 AI」可让本机 tea_a2 联网补充</span>
+      </p>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="vessel"><i class="rim" aria-hidden="true"></i></div>
+      <div class="ember e1"></div>
+      <div class="ember e2"></div>
+      <div class="ember e3"></div>
+    </div>
+  </header>
+
+  <section class="compare" aria-labelledby="compareTitle">
+    <div class="wrap">
+      <div class="compare-head">
+        <h2 id="compareTitle">先分清「陶」与「瓷」</h2>
+        <p>这条时间线上有陶也有瓷。两者的分界不是名字，而是胎料、温度、吸水率和釉。</p>
+      </div>
+      <div class="compare-table" role="table" aria-label="陶与瓷的对比">
+        <div class="compare-row head" role="row">
+          <span role="columnheader">维度</span>
+          <span role="columnheader">陶</span>
+          <span role="columnheader">瓷</span>
+        </div>
+        <div id="compareBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="rail" aria-label="按时代跳转">
+    <div class="rail-inner" id="railList"></div>
+  </nav>
+
+  <main id="timeline" class="timeline" tabindex="-1">
+    <div class="wrap" id="timelineList"></div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p class="disclaim">
+        <strong>关于内容</strong>：年代与出土信息以考古报告、博物馆展签与公开研究为准；不同学者的断代会略有出入，
+        文中已尽量写成区间。图片均来自 Wikimedia Commons，页面底部与灯箱内逐张标注作者与许可。
+      </p>
+      <p class="disclaim">
+        <strong>关于 AI</strong>：联网回答由本机 <code>tea_a2</code> 生成，<b>未经审核</b>，可能出错；
+        涉及文物定年、真伪与价格的结论，请以博物馆与正式出版物为准。
+      </p>
+      <p class="meta" id="footerMeta"></p>
+    </div>
+  </footer>
+
+  <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="查看大图">
+    <button class="lb-close" type="button" data-lb="close" aria-label="关闭">✕</button>
+    <button class="lb-nav prev" type="button" data-lb="prev" aria-label="上一件">‹</button>
+    <button class="lb-nav next" type="button" data-lb="next" aria-label="下一件">›</button>
+    <figure class="lb-figure">
+      <div class="lb-stage" id="lbStage"><img id="lbImg" alt="" /></div>
+      <figcaption>
+        <p class="lb-title" id="lbTitle"></p>
+        <p class="lb-sub" id="lbSub"></p>
+        <p class="lb-credit" id="lbCredit"></p>
+        <p class="lb-tip">滚轮 / 双击缩放 · 放大后拖动平移 · ← → 切换 · Esc 关闭</p>
+      </figcaption>
+    </figure>
+    <p class="lb-count" id="lbCount"></p>
+  </div>
+
+  <div class="ai" id="ai" hidden>
+    <div class="ai-backdrop" data-ai="close"></div>
+    <section class="ai-panel" role="dialog" aria-modal="true" aria-labelledby="aiTitle">
+      <header class="ai-head">
+        <div>
+          <h2 id="aiTitle">AI 搜索</h2>
+          <p class="ai-sub">本机 tea_a2 · 可联网检索</p>
+        </div>
+        <span class="ai-status" id="aiStatus" data-state="unknown">检测中…</span>
+        <button class="ai-close" type="button" data-ai="close" aria-label="关闭">✕</button>
+      </header>
+
+      <form class="ai-form" id="aiForm" autocomplete="off">
+        <label class="sr-only" for="aiQuery">想问什么</label>
+        <textarea id="aiQuery" rows="2" maxlength="300" placeholder="例如：汝窑天青釉为什么这么难烧？"></textarea>
+        <div class="ai-actions">
+          <button class="btn primary" type="submit" id="aiSubmit">提问</button>
+          <button class="btn" type="button" id="aiSettingsBtn" aria-expanded="false">设置</button>
+        </div>
+      </form>
+
+      <div class="ai-presets" id="aiPresets" aria-label="示例问题"></div>
+
+      <details class="ai-settings" id="aiSettings">
+        <summary>连接设置</summary>
+        <div class="ai-fields">
+          <label>服务地址<input id="aiBase" type="url" placeholder="http://localhost:8383" /></label>
+          <label>provider<input id="aiProvider" type="text" placeholder="deepseek" /></label>
+          <label>model<input id="aiModel" type="text" placeholder="deepseek-flash" /></label>
+        </div>
+        <p class="ai-note">默认 <code>deepseek / deepseek-flash</code>：该 provider 支持服务端联网检索。改完点「保存并探测」。</p>
+        <div class="ai-actions">
+          <button class="btn" type="button" id="aiSaveSettings">保存并探测</button>
+          <button class="btn" type="button" id="aiResetSettings">恢复默认</button>
+        </div>
+      </details>
+
+      <div class="ai-body" id="aiBody" aria-live="polite">
+        <div class="ai-empty">
+          <p>问一件器物、一种釉色，或一个「为什么」。</p>
+          <p class="muted">回答来自本机 tea_a2（默认 <code>localhost:8383</code>），会带上检索到的来源链接。</p>
+        </div>
+      </div>
+      <div class="ai-foot">
+        <span id="aiMeta"></span>
+        <button class="btn small" type="button" id="aiClear">清空</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="audio" id="audioDock">
+    <div class="music-pop" id="musicPop" hidden>
+      <p class="music-lead">背景音乐是浏览器实时合成的：窑火的低频、风声，加几粒 D 五声音阶的拨弦。没有音频文件。</p>
+      <label class="music-vol" for="musicVol">
+        <span>音量 <output id="musicVolOut">45%</output></span>
+        <input id="musicVol" type="range" min="0" max="100" step="1" value="45" />
+      </label>
+      <p class="music-note">浏览器要求先点一下页面才能出声；切到后台时会自动压低。</p>
+      <button class="btn small" type="button" id="musicHintClose">知道了</button>
+    </div>
+    <div class="audio-row">
+      <button class="music-btn" id="musicBtn" type="button" aria-pressed="false" aria-label="背景音乐：窑火">
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="music-label">窑火</span>
+      </button>
+      <button class="music-more" id="musicMore" type="button" aria-label="音乐与音量设置" aria-expanded="false">⋯</button>
+    </div>
+  </div>
+
+  <button class="fab" id="aiFab" type="button" aria-label="打开 AI 搜索">AI<span>问陶</span></button>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="assets/ceramics/sources.js"></script>
+  <script src="src/data-ceramics.js"></script>
+  <script src="src/core.js"></script>
+  <script src="src/audio.js"></script>
+  <script src="src/online.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

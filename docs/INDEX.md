@@ -23,6 +23,7 @@
 | 12 | 🏗️ 青岛栈桥 & 回澜阁 | `zhanqiao/` | 按真实物理尺寸的 Blender 建模（含 `.blend`） | Blender | 打开 `zhanqiao.blend` | `python zhanqiao/verify.py` |
 | 13 | 🚀 终末地 · 舰桥观测舱 | `endfield-ship/` | 明日方舟风格飞船内舱：泰拉II 行星 + 天梯缆索 + ARK 风格 HUD | Three.js + 原生 ESM | `npm run dev` | `npm run test:endfield` |
 | 14 | 🌿 中药大全 | `tcm-herb/` | 药材图鉴 + 按病症查药/配伍/验方、拼音与错别字检索、查询历史、可选联网 | 原生 JS（file://） | 双击 `index.html` | `npm run test:tcm` |
+| 15 | 🏺 中国陶器史 | `pottery/` | 两万年长幅时间线：20 件真实器物，左年代 / 中实物图 / 右点评，点图放大，Web Audio 实时合成背景音乐，可选 tea_a2 联网问答 | 原生 JS（file://） | 双击 `index.html` | `npm run test:pottery` |
 
 > 每个项目都有自己的 `README.md`，细节看那一份；本页只做索引与横向对比。
 
@@ -47,6 +48,9 @@
 > 开发时也能用 `npm run dev` 访问 `/rubiks-cube/`、`/sticky-notes/`。
 > 🌿 **中药大全** 同样是独立的 `file://` 应用（86 味药 / 39 病症 / 22 首验方），可选接本机 tea_a2 联网补充；
 > 单文件版用 `npm run tcm:build` 生成。
+> 🏺 **中国陶器史** 也是独立的 `file://` 应用：20 件器物、22 张 Wikimedia Commons 实物图（逐张署名）、
+> 点击放大灯箱；右下角「♪ 窑火」用 Web Audio 实时合成背景音乐（没有音频文件），「AI 问陶」调本机 tea_a2 联网检索。
+> 单文件版用 `npm run pottery:build` 生成。
 
 ### A2. 3D 场景（Three.js）
 
@@ -149,6 +153,7 @@ tea_a2_demo/
 ├── iptv-player/              # ④ IPTV 剧场
 ├── sticky-notes/             # ⑤ 便笺（独立 file:// 应用）
 ├── tcm-herb/                 # ⑯ 中药大全（独立 file:// 应用）
+├── pottery/                  # 🏺 中国陶器史（独立 file:// 应用 + 可选 AI）
 ├── rubiks-cube/              # ⑥ 三阶魔方还原教程（独立 file:// 应用）
 ├── ai-town/                  # ⑦ AI 小镇
 ├── sanguosha-ai/             # ⑧ AI 三国杀
