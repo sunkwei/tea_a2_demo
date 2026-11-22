@@ -9,7 +9,7 @@
 
 | # | 项目 | 目录 | 一句话定位 | 技术栈 | 启动 | 自测 |
 |---|------|------|-----------|--------|------|------|
-| 1 | 🐱 喵屋便利店 | 根 `index.html` + `src/` | 雨夜 3D 小镇：霓虹便利店、会走路的橘猫、积水倒影、斜飞雨丝 | Three.js + Vite | `npm run dev` | — |
+| 1 | 🐱 喵屋便利店 | `meow-mart/` | 雨夜 3D 小镇：霓虹便利店、会走路的橘猫、积水倒影、斜飞雨丝 | Three.js + Vite | `npm run dev` → `/meow-mart/` | — |
 | 2 | 🐍 贪吃蛇竞赛 | `snake-race/` | 2–4 条 AI 蛇同场围杀，5 种自研避让算法竞技 | 原生 JS + Canvas | `npm run dev` | `npm run test:snake` |
 | 3 | 🎬 60 秒看懂 Self-Attention | `attention-film/` | 图解短片：Canvas 2D 讲清 Self-Attention → Transformer | Canvas 2D + ffmpeg | `npm run dev` | `npm run film:shot` |
 | 4 | 📺 IPTV 剧场 | `iptv-player/` | 网页版直播播放器：87 个内置源、在线更新、频道体检 | 原生 JS + hls.js | `npm run dev` | `npm run test:iptv` |
@@ -35,13 +35,13 @@
 
 | 项目 | 看点 |
 |------|------|
-| 🐱 喵屋便利店 | 全部几何体与贴图**运行时程序化生成**，仓库里没有一个模型/贴图文件；后处理含 Bloom |
+| 🐱 喵屋便利店（`meow-mart/`） | 全部几何体与贴图**运行时程序化生成**，仓库里没有一个模型/贴图文件；后处理含 Bloom |
 | 🐍 贪吃蛇竞赛 | 5 种 AI 避让算法同场竞技，含基准组与 head-to-head 压测脚本 |
 | 🎬 Self-Attention 短片 | 无动画库、无外部素材，逐帧渲染后用 ffmpeg 合成 |
 | 🧊 三阶魔方 | 贴纸/块体/光照全是手写 WebGL，鼠标拖拽即拧层，教程公式经整盘模拟校验 |
 
 前三个与 IPTV 共用根目录的 Vite 工程（`vite.config.js`），`npm run dev` 后按路径访问：
-`/`、`/snake-race/`、`/attention-film/`、`/iptv-player/`。
+`/`（项目索引页）、`/meow-mart/`、`/snake-race/`、`/attention-film/`、`/iptv-player/`。
 
 > **🧊 三阶魔方与 📌 便笺是独立的 `file://` 应用**，用经典 `<script>` 引入（ES module 在
 > `file://` 下会被 CORS 拦掉），因此**不进入 Vite 构建**、也不需要打包；双击 `index.html` 即用。
@@ -54,7 +54,7 @@
 
 ### A2. 3D 场景（Three.js）
 
-- 🐱 根 `src/`：喵屋便利店 —— 雨夜霓虹小镇（程序化贴图 + Bloom + 积水反射）
+- 🐱 `meow-mart/`：喵屋便利店 —— 雨夜霓虹小镇（程序化贴图 + Bloom + 积水反射）
 - 🚀 `endfield-ship/`：终末地 · 舰桥观测舱 —— 泰拉II 行星 / 天梯缆索 / 明日方舟风格 HUD
   （PBR + 程序化 Canvas 贴图 + 体积光 + Bloom 调色 + PRTS 终端）
   自测：`npm run test:endfield`（70 项离线断言）、`npm run endfield:verify`（46 项无头浏览器）
@@ -111,7 +111,7 @@ LLM 调用封装、正文清洗、摘要提示词与解析。两者各自只 imp
 
 | 命令 | 作用 |
 |------|------|
-| `npm run dev` | Vite 开发服务器（:5173），根路径即喵屋便利店 |
+| `npm run dev` | Vite 开发服务器（:5173），根路径是项目索引页，喵屋在 `/meow-mart/` |
 | `npm run build` / `npm run preview` | 构建 / 预览产物 |
 | `npm run test:snake` | 贪吃蛇规则断言 + 性能压测 |
 | `npm run bench:snake:head` | 贪吃蛇算法 head-to-head（200 局） |
@@ -146,8 +146,11 @@ LLM 调用封装、正文清洗、摘要提示词与解析。两者各自只 imp
 
 ```
 tea_a2_demo/
-├── index.html  src/          # ① 喵屋便利店（Three.js）
+├── index.html                # 🎪 项目索引落地页（横幅 + 筛选 + 搜索）
 ├── vite.config.js  package.json
+├── docs/banners/             # 17 张项目横幅 SVG（npm run index:build 生成）
+├── tools/gen-project-index.mjs  # 横幅 + 索引页生成器
+├── meow-mart/                # ① 喵屋便利店（Three.js）
 ├── snake-race/               # ② 贪吃蛇竞赛
 ├── attention-film/           # ③ Self-Attention 短片
 ├── iptv-player/              # ④ IPTV 剧场

@@ -2,40 +2,343 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>喵屋便利店 · Midnight Meow Mart</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐱</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>a2_demo · 项目索引</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎪</text></svg>" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #07090f;
+        --line: #1e2635;
+        --text: #e8eef8;
+        --dim: #8b9bb4;
+        --accent: #6ea8ff;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background:
+          radial-gradient(1200px 600px at 15% -10%, #16203a 0%, transparent 60%),
+          radial-gradient(900px 500px at 90% 0%, #2a1038 0%, transparent 55%),
+          var(--bg);
+        color: var(--text);
+        font: 15px/1.6 "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+        min-height: 100vh;
+      }
+      a { color: inherit; text-decoration: none; }
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 56px 24px 72px; }
+      header h1 { font-size: clamp(26px, 4vw, 40px); margin: 0 0 12px; letter-spacing: 0.5px; }
+      header .lead { color: var(--dim); margin: 0 0 6px; font-size: 16px; }
+      header .sub { color: #5f7392; margin: 0; font-size: 13px; }
+      header .sub a { color: #7f9cc4; }
+      .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 28px 0 22px; }
+      .chip {
+        border: 1px solid var(--line); background: #0c1119; color: var(--dim);
+        padding: 7px 14px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 13px;
+        transition: 0.15s;
+      }
+      .chip:hover { color: var(--text); border-color: #2c3a52; }
+      .chip.on { color: #0a0f18; background: var(--accent); border-color: var(--accent); font-weight: 700; }
+      .search {
+        margin-left: auto; min-width: 200px; flex: 0 1 260px;
+        background: #0c1119; border: 1px solid var(--line); border-radius: 999px;
+        padding: 8px 16px; color: var(--text); font: inherit; font-size: 13px; outline: none;
+      }
+      .search:focus { border-color: #35507a; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+      .card {
+        background: linear-gradient(180deg, #0f1522, #0a0e16);
+        border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+        display: flex; flex-direction: column; transition: 0.18s;
+      }
+      .card:hover { border-color: #35507a; transform: translateY(-2px); }
+      .card.hide { display: none; }
+      .shot { display: block; line-height: 0; background: #080b12; }
+      .shot img { width: 100%; height: auto; display: block; }
+      .body { padding: 14px 18px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+      .body p { margin: 0; color: var(--dim); font-size: 13px; }
+      .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+      .tags span {
+        font-size: 11px; color: #9fb6d8; border: 1px solid #223049;
+        background: #0d1626; border-radius: 999px; padding: 2px 9px;
+      }
+      .foot { margin-top: auto; padding-top: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; border-top: 1px dashed #1a2334; }
+      .foot code { font-size: 12px; color: #8ea6c8; background: #0b1019; border: 1px solid #1a2334; border-radius: 6px; padding: 2px 7px; }
+      .foot .run { font-size: 12px; color: #64768f; }
+      .foot .go { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--accent); }
+      .foot .go:hover { text-decoration: underline; }
+      .foot .doc { font-size: 12px; color: var(--dim); }
+      .foot .doc:hover { color: var(--text); }
+      .empty { color: var(--dim); padding: 24px 0; display: none; }
+      footer { margin-top: 44px; color: #55677f; font-size: 12.5px; border-top: 1px solid #141b27; padding-top: 18px; }
+      footer a { color: #7f9cc4; }
+      footer code { color: #8ea6c8; }
+      @media (max-width: 560px) {
+        .wrap { padding: 32px 16px 48px; }
+        .search { margin-left: 0; flex-basis: 100%; }
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div class="wrap">
+      <header>
+        <h1>🎪 a2_demo · 多项目实验场</h1>
+        <p class="lead">17 个各自独立、打开就能跑的小项目：3D 场景、纯前端应用、LLM 玩法、内容抓取与素材工程。</p>
+        <p class="sub">全部由 <a href="https://github.com/sunkwei/tea_a2">tea_a2</a> 创建 · 详细索引见 <a href="README.md">README.md</a> / <a href="docs/INDEX.md">docs/INDEX.md</a></p>
+      </header>
 
-    <div id="loader">
-      <div class="loader-inner">
-        <div class="paw">🐾</div>
-        <div class="loader-text">正在点亮霓虹灯…</div>
+      <div class="bar">
+        <button class="chip on" data-cat="all">全部 17</button>
+        <button class="chip" data-cat="viz">3D & 可视化 4</button>
+        <button class="chip" data-cat="web">纯前端小应用 5</button>
+        <button class="chip" data-cat="llm">LLM 应用 3</button>
+        <button class="chip" data-cat="data">抓取与摘要 3</button>
+        <button class="chip" data-cat="asset">素材 · 扩展 · 建模 2</button>
+        <input class="search" id="q" type="search" placeholder="搜索项目 / 技术栈…" />
       </div>
+
+      <main class="grid" id="grid">
+      <article class="card" data-cat="viz" data-search="喵屋便利店 midnight meow mart 雨夜霓虹小镇：会走路的橘猫与积水倒影 meow-mart/ three.js bloom 程序化">
+        <a class="shot" href="meow-mart/index.html"><img src="docs/banners/meow-mart.svg" alt="喵屋便利店" loading="lazy"></a>
+        <div class="body">
+          <p>全部几何体与贴图运行时生成，仓库里没有一个模型文件</p>
+          <div class="tags"><span>Three.js</span><span>Bloom</span><span>程序化</span></div>
+          <div class="foot">
+            <code>meow-mart/</code>
+            <span class="run">npm run dev</span>
+            <a class="go" href="meow-mart/index.html">打开 →</a><a class="doc" href="meow-mart/README.md">说明</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="viz" data-search="终末地 · 舰桥观测舱 endfield · bridge deck 明日方舟风格飞船内舱 + ark 风格 hud endfield-ship/ three.js pbr 体积光">
+        <a class="shot" href="endfield-ship/index.html"><img src="docs/banners/endfield-ship.svg" alt="终末地 · 舰桥观测舱" loading="lazy"></a>
+        <div class="body">
+          <p>舷窗外有泰拉II、天梯缆索；PRTS 终端可以真的敲指令</p>
+          <div class="tags"><span>Three.js</span><span>PBR</span><span>体积光</span></div>
+          <div class="foot">
+            <code>endfield-ship/</code>
+            <span class="run">npm run dev</span>
+            <a class="go" href="endfield-ship/index.html">打开 →</a><a class="doc" href="endfield-ship/README.md">说明</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="viz" data-search="贪吃蛇竞赛 snake arena 2–4 条 ai 蛇同场围杀，生存到最后者胜 snake-race/ 原生 js canvas ai 算法">
+        <a class="shot" href="snake-race/index.html"><img src="docs/banners/snake-race.svg" alt="贪吃蛇竞赛" loading="lazy"></a>
+        <div class="body">
+          <p>每轮计算硬性 ≤ 50ms，含无头自测与胜率基准</p>
+          <div class="tags"><span>原生 JS</span><span>Canvas</span><span>AI 算法</span></div>
+          <div class="foot">
+            <code>snake-race/</code>
+            <span class="run">npm run dev</span>
+            <a class="go" href="snake-race/index.html">打开 →</a><a class="doc" href="snake-race/README.md">说明</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="viz" data-search="60 秒看懂 self-attention attention film 图解短片：从 q/k/v 一路讲到 transformer attention-film/ canvas 2d ffmpeg 逐帧渲染">
+        <a class="shot" href="attention-film/index.html"><img src="docs/banners/attention-film.svg" alt="60 秒看懂 Self-Attention" loading="lazy"></a>
+        <div class="body">
+          <p>每一帧都是时间 t 的纯函数，进度条可以任意拖</p>
+          <div class="tags"><span>Canvas 2D</span><span>ffmpeg</span><span>逐帧渲染</span></div>
+          <div class="foot">
+            <code>attention-film/</code>
+            <span class="run">npm run dev</span>
+            <a class="go" href="attention-film/index.html">打开 →</a><a class="doc" href="attention-film/README.md">说明</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="web" data-search="iptv 剧场 iptv theater 网页版直播播放器：87 个源，在线自动更新 iptv-player/ hls.js 流代理 频道体检">
+        <a class="shot" href="iptv-player/index.html"><img src="docs/banners/iptv-player.svg" alt="IPTV 剧场" loading="lazy"></a>
+        <div class="body">
+          <p>ETag 条件请求判重，失效频道一键隐藏</p>
+          <div class="tags"><span>hls.js</span><span>流代理</span><span>频道体检</span></div>
+          <div class="foot">
+            <code>iptv-player/</code>
+            <span class="run">npm run dev</span>
+            <a class="go" href="iptv-player/index.html">打开 →</a><a class="doc" href="iptv-player/README.md">说明</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="web" data-search="便笺 sticky notes 纯本地便笺：提醒、回收站、正则分类 sticky-notes/ localstorage file:// ai 可选">
+        <a class="shot" href="sticky-notes/index.html"><img src="docs/banners/sticky-notes.svg" alt="便笺" loading="lazy"></a>
+        <div class="body">
+          <p>文字色按 WCAG 对比度自动挑选，全部 ≥ 4.5:1</p>
+          <div class="tags"><span>localStorage</span><span>file://</span><span>AI 可选</span></div>
+          <div class="foot">
+            <code>sticky-notes/</code>
+            <span class="run">双击 index.html</span>
+            <a class="go" href="sticky-notes/index.html">打开 →</a><a class="doc" href="sticky-notes/README.md">说明</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="web" data-search="三阶魔方还原教程 rubik’s cube 手写 webgl 魔方 + 7 步还原教程 rubiks-cube/ webgl 零依赖 file://">
+        <a class="shot" href="rubiks-cube/index.html"><img src="docs/banners/rubiks-cube.svg" alt="三阶魔方还原教程" loading="lazy"></a>
+        <div class="body">
+          <p>按住任意贴纸拖动即拧层，教程公式经整盘模拟校验</p>
+          <div class="tags"><span>WebGL</span><span>零依赖</span><span>file://</span></div>
+          <div class="foot">
+            <code>rubiks-cube/</code>
+            <span class="run">双击 index.html</span>
+            <a class="go" href="rubiks-cube/index.html">打开 →</a><a class="doc" href="rubiks-cube/README.md">说明</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="web" data-search="中药大全 tcm herb atlas 86 味药材图鉴 + 39 个病症 + 22 首验方 tcm-herb/ 原生 js 离线可用 拼音检索">
+        <a class="shot" href="tcm-herb/index.html"><img src="docs/banners/tcm-herb.svg" alt="中药大全" loading="lazy"></a>
+        <div class="body">
+          <p>按病症查药与配伍，错别字也能搜到</p>
+          <div class="tags"><span>原生 JS</span><span>离线可用</span><span>拼音检索</span></div>
+          <div class="foot">
+            <code>tcm-herb/</code>
+            <span class="run">双击 index.html</span>
+            <a class="go" href="tcm-herb/index.html">打开 →</a><a class="doc" href="tcm-herb/README.md">说明</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="web" data-search="中国陶器史 chinese ceramics 两万年窑火：20 件器物的长幅时间线 pottery/ 原生 js web audio ai 问答">
+        <a class="shot" href="pottery/index.html"><img src="docs/banners/pottery.svg" alt="中国陶器史" loading="lazy"></a>
+        <div class="body">
+          <p>背景音乐用 Web Audio 实时合成，没有音频文件</p>
+          <div class="tags"><span>原生 JS</span><span>Web Audio</span><span>AI 问答</span></div>
+          <div class="foot">
+            <code>pottery/</code>
+            <span class="run">双击 index.html</span>
+            <a class="go" href="pottery/index.html">打开 →</a><a class="doc" href="pottery/README.md">说明</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="llm" data-search="ai 小镇：无限人生 ai town llm 现场生成居民、事件与主线的模拟经营 ai-town/ python tkinter llm">
+        <a class="shot" href="ai-town/README.md"><img src="docs/banners/ai-town.svg" alt="AI 小镇：无限人生" loading="lazy"></a>
+        <div class="body">
+          <p>17 种结局，全 NPC 可自动玩，离线也能跑</p>
+          <div class="tags"><span>Python</span><span>Tkinter</span><span>LLM</span></div>
+          <div class="foot">
+            <code>ai-town/</code>
+            <span class="run">python ai-town/main.py</span>
+            <a class="go" href="ai-town/README.md">看用法 →</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="llm" data-search="ai 三国杀 sanguosha ai 三个大模型同台打三国杀，自己出牌自己喊话 sanguosha-ai/ python html5 多模型">
+        <a class="shot" href="sanguosha-ai/web/index.html"><img src="docs/banners/sanguosha-ai.svg" alt="AI 三国杀" loading="lazy"></a>
+        <div class="body">
+          <p>命令行与网页版共用一套对局内核</p>
+          <div class="tags"><span>Python</span><span>HTML5</span><span>多模型</span></div>
+          <div class="foot">
+            <code>sanguosha-ai/</code>
+            <span class="run">npm run sgss:web</span>
+            <a class="go" href="sanguosha-ai/web/index.html">打开 →</a><a class="doc" href="sanguosha-ai/README.md">说明</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="llm" data-search="tea_a2 划词助手 tea-select extension firefox 扩展：划词即译 / 搜 / 总结，还能划图识图 tea-select/ mv3 firefox vision">
+        <a class="shot" href="tea-select/README.md"><img src="docs/banners/tea-select.svg" alt="tea_a2 划词助手" loading="lazy"></a>
+        <div class="body">
+          <p>结果直接显示在横幅里，不用切标签页</p>
+          <div class="tags"><span>MV3</span><span>Firefox</span><span>Vision</span></div>
+          <div class="foot">
+            <code>tea-select/</code>
+            <span class="run">web-ext run</span>
+            <a class="go" href="tea-select/README.md">看用法 →</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="data" data-search="b 站 digest bilibili digest 观看历史 → 字幕 → llm 摘要 → 周报 bilibili/ python 字幕校验 llm">
+        <a class="shot" href="bilibili/README.md"><img src="docs/banners/bilibili.svg" alt="B 站 digest" loading="lazy"></a>
+        <div class="body">
+          <p>还有 discover：主动去找值得收藏的视频并加稍后再看</p>
+          <div class="tags"><span>Python</span><span>字幕校验</span><span>LLM</span></div>
+          <div class="foot">
+            <code>bilibili/</code>
+            <span class="run">python bilibili/bili.py all</span>
+            <a class="go" href="bilibili/README.md">看用法 →</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="data" data-search="知乎 digest zhihu digest 收藏夹 / 回答正文 → 结构化摘要 zhihu/ python 抓取 llm">
+        <a class="shot" href="zhihu/README.md"><img src="docs/banners/zhihu.svg" alt="知乎 digest" loading="lazy"></a>
+        <div class="body">
+          <p>写操作默认 dry-run，加 --yes 才真投递</p>
+          <div class="tags"><span>Python</span><span>抓取</span><span>LLM</span></div>
+          <div class="foot">
+            <code>zhihu/</code>
+            <span class="run">python zhihu/zhihu.py digest</span>
+            <a class="go" href="zhihu/README.md">看用法 →</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="data" data-search="本地视频分析 video analysis 抽帧拼图 + 本地 asr → llm 写分析报告 video_analysis/ sensevoice onnx llm">
+        <a class="shot" href="video_analysis/README.md"><img src="docs/banners/video-analysis.svg" alt="本地视频分析" loading="lazy"></a>
+        <div class="body">
+          <p>3×3 拼图每格烧了时间戳，ASR 全离线跑在 CPU 上</p>
+          <div class="tags"><span>SenseVoice</span><span>ONNX</span><span>LLM</span></div>
+          <div class="foot">
+            <code>video_analysis/</code>
+            <span class="run">python video_analysis/video_analysis.py</span>
+            <a class="go" href="video_analysis/README.md">看用法 →</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="asset" data-search="godot · 三国肉鸽 godot roguelike godot 4 项目：三国题材肉鸽 godot/ godot 4 gdscript">
+        <a class="shot" href="GoDot/README.md"><img src="docs/banners/godot.svg" alt="GoDot · 三国肉鸽" loading="lazy"></a>
+        <div class="body">
+          <p>场景、脚本与像素素材都在仓库里</p>
+          <div class="tags"><span>Godot 4</span><span>GDScript</span></div>
+          <div class="foot">
+            <code>GoDot/</code>
+            <span class="run">Godot 打开</span>
+            <a class="go" href="GoDot/README.md">看用法 →</a>
+          </div>
+        </div>
+      </article>
+      <article class="card" data-cat="asset" data-search="青岛栈桥 &amp; 回澜阁 zhanqiao model 按真实物理尺寸的 blender 建模 zhanqiao/ blender python 尺寸校验">
+        <a class="shot" href="zhanqiao/README.md"><img src="docs/banners/zhanqiao.svg" alt="青岛栈桥 &amp; 回澜阁" loading="lazy"></a>
+        <div class="body">
+          <p>build_zhanqiao.py 生成模型，verify.py 复核尺寸</p>
+          <div class="tags"><span>Blender</span><span>Python</span><span>尺寸校验</span></div>
+          <div class="foot">
+            <code>zhanqiao/</code>
+            <span class="run">打开 .blend</span>
+            <a class="go" href="zhanqiao/README.md">看用法 →</a>
+          </div>
+        </div>
+      </article>
+      </main>
+      <p class="empty" id="empty">没有匹配的项目 —— 换个关键词试试。</p>
+
+      <footer>
+        前端项目统一由根目录的 Vite 工程托管（<code>npm run dev</code> → <code>http://127.0.0.1:5173/</code>）；
+        便笺 / 魔方 / 中药大全 / 陶器史是纯 <code>file://</code> 应用，双击各自目录下的 <code>index.html</code> 即可。
+      </footer>
     </div>
 
-    <header id="hud">
-      <h1>喵屋便利店</h1>
-      <p class="sub">MIDNIGHT MEOW MART · 24H OPEN</p>
-      <p class="tips">
-        <b>拖拽</b> 旋转视角 · <b>滚轮</b> 缩放 · <b>点击橘猫</b> 摸摸头<br />
-        还可以点 <b>霓虹招牌</b> / <b>路灯</b> / <b>售货机</b><br />
-        <b>H</b> 收起 / 展开面板 · <b>R</b> 开 / 关雨<br />
-        <a class="snake-link" href="./endfield-ship/index.html">🚀 登上「长明号」舰桥观测舱 →</a><br />
-        <a class="snake-link" href="./snake-race/index.html">🐍 去玩「贪吃蛇竞赛」→</a><br />
-        <a class="snake-link" href="./attention-film/index.html">🎬 看短片《60 秒看懂 Self-Attention》→</a><br />
-        <a class="snake-link" href="./iptv-player/index.html">📺 看「IPTV 剧场」在线直播→</a><br />
-        <a class="snake-link" href="./sticky-notes/index.html">📌 用「便笺」记要点（本地文件即开即用）→</a><br />
-        <a class="snake-link" href="./tcm-herb/index.html">🌿 查「中药大全」· 药材图鉴与病症验方 →</a>
-        <br />
-        <a class="snake-link" href="./pottery/index.html">🏺 看「中国陶器史」· 两万年窑火长卷 →</a>
-      </p>
-    </header>
+    <script>
+      const chips = [...document.querySelectorAll('.chip')];
+      const cards = [...document.querySelectorAll('.card')];
+      const empty = document.getElementById('empty');
+      const q = document.getElementById('q');
+      let cat = 'all';
 
-    <div id="meow" class="meow-pop"></div>
+      function apply() {
+        const kw = q.value.trim().toLowerCase();
+        let shown = 0;
+        for (const card of cards) {
+          const okCat = cat === 'all' || card.dataset.cat === cat;
+          const okKw = !kw || card.dataset.search.includes(kw);
+          const ok = okCat && okKw;
+          card.classList.toggle('hide', !ok);
+          if (ok) shown++;
+        }
+        empty.style.display = shown ? 'none' : 'block';
+      }
 
-    <script type="module" src="/src/main.js"></script>
+      for (const chip of chips) {
+        chip.addEventListener('click', () => {
+          cat = chip.dataset.cat;
+          chips.forEach((c) => c.classList.toggle('on', c === chip));
+          apply();
+        });
+      }
+      q.addEventListener('input', apply);
+    </script>
   </body>
 </html>

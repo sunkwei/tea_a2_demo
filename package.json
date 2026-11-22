@@ -1,12 +1,13 @@
 {
-  "name": "meow-mart-3d",
+  "name": "a2-demo",
   "version": "1.0.0",
-  "description": "喵屋便利店 —— 用 Three.js 程序化生成的雨夜 3D 小镇",
+  "description": "a2_demo · 多项目实验场：喵屋便利店 3D 小镇 + 贪吃蛇 / IPTV / 魔方 / 中药 / 陶器 / LLM 应用 / 抓取摘要",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "index:build": "node tools/gen-project-index.mjs",
     "test:snake": "node snake-race/tools/selftest.mjs",
     "bench:snake": "node snake-race/tools/bench.mjs 60 3000 4",
     "bench:snake:head": "node snake-race/tools/bench.mjs 200",
@@ -63,7 +64,10 @@
     "hls",
     "sticky-notes",
     "localstorage",
-    "offline"
+    "offline",
+    "multi-project",
+    "vite",
+    "llm"
   ],
   "license": "MIT",
   "dependencies": {

@@ -56,7 +56,9 @@ export default defineConfig({
     chunkSizeWarningLimit: 1200,
     rollupOptions: {
       input: {
-        main: r('./index.html'),
+        // 根 index.html 是「全仓库项目索引页」，各项目在各自目录里
+        index: r('./index.html'),
+        meow: r('./meow-mart/index.html'),
         snake: r('./snake-race/index.html'),
         film: r('./attention-film/index.html'),
         iptv: r('./iptv-player/index.html'),
