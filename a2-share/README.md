@@ -11,6 +11,9 @@
 
 需求见 [`REQUIREMENTS.md`](REQUIREMENTS.md)（v1.0 定稿），设计见 [`DESIGN.md`](DESIGN.md)（v1.1）。
 
+**实现状态**：M0–M7 已全部落地并通过自动化验证 —— PC 单测 89 项 / 集成 21 项 / 自检 6 项 / 真服务冒烟通过；手机端 JVM 单测 51 项；release APK 4.29 MB；真机（小米 14 / Android 16）验收 6/6 通过。尚未验证的项见 §7。
+
+
 ---
 
 ## 1. 五分钟跑通
@@ -152,14 +155,14 @@ A2S1-<SECRET:16>-<IP:8>-<PORT:4>-<ISSUED:7>[-<NAME:1..7>]
 ## 5. 测试与自检
 
 ```bash
-# PC 端单元测试（84 项）
+# PC 端单元测试（89 项）
 npm run test:a2share
 #   等价：python -m unittest discover -s a2-share/pc/tests -t a2-share/pc
 
 # PC 端自检（6 项：目录 / 端口 / 黄金样本 / 二维码 / 配对→上传闭环 / 剪贴板）
 npm run a2share:selftest
 
-# PC 端集成闭环（19 项：配对→上传→续传→冲突→未授权→超限→同名→剪贴板降级→幂等→重启续传）
+# PC 端集成闭环（21 项：配对→上传→续传→冲突→未授权→超限→同名→剪贴板降级→幂等→重启续传→剪贴板 Unicode）
 npm run a2share:e2e
 
 # 真服务冒烟（起真进程 → 探活 → 二维码 PNG → 未授权被拒）
@@ -167,6 +170,9 @@ npm run a2share:smoke
 
 # 手机端 JVM 单测（51 项：载荷 / 名称 / 配额 / 状态机 / TTL / 黄金样本）
 npm run a2share:test
+
+# 真机验收（需要连着手机：先 adb install 再跑）
+npm run a2share:device -- --serial <设备号>
 
 # 出 APK（debug key 签名）
 npm run a2share:build
@@ -238,8 +244,13 @@ python a2-share/tools/device_e2e.py --serial <设备号>
    见 `DESIGN.md` §9.4 残余风险。
 5. **只走 IPv4 私网**：IPv6-only 局域网不在 v1 范围。
 6. **单设备**：第二台手机配对会顶掉第一台（一码一机）。
-7. **本仓库尚未做真机回归**：仓库里没有连接的手机与真实 Wi-Fi 环境，
-   AC-01 ~ AC-33 需要按上面的清单在真机上跑一遍并留证。
+7. **PC 重启后必须重新扫码**：会话凭据随 PC 进程轮换（FR-L07 / AC-17），
+   离线缓存的内容会在**重新扫码后**自动补发（FR-L05）。
+   —— 这也是 AC-20 的真实语义：「PC 启动后自动收到」的前提是先完成一次重扫。
+8. **仍未在真机上验证的用例**：相机扫码（AC-13/14，需人工对着屏幕扫）、
+   1 GB 大文件与断点续传（AC-07/23）、息屏传输（AC-08）、
+   缓存淘汰通知（AC-21）、微信内是否列出 a2_share（AC-03）。
+   已验证的部分见 §6 的表格与 `tools/device-checklist.md`。
 
 ---
 
@@ -255,7 +266,7 @@ a2-share/
 │   ├── a2_share.py      # 入口
 │   ├── a2share/         # config/session/qr/png/server/uploads/safe_name/clipboard/notify/net/history/opener/log
 │   ├── vendor/          # Nayuki qrcodegen（MIT）
-│   └── tests/           # unittest（84 项）
+│   └── tests/           # unittest（89 项）
 ├── phone/               # Android 工程（Kotlin）
 │   └── app/src/main/java/com/tea/a2share/
 │       ├── core/        # 纯 Kotlin：QrPayload/QuotaPolicy/SafeName/PairPolicy/TransferMachine/Expiry/ApiDto
@@ -265,7 +276,9 @@ a2-share/
 │       └── ui/          # 主界面 / 分享确认条 / 扫码 / 设置
 └── tools/
     ├── vectors/v1.json  # 两端共用的黄金样本
-    ├── e2e.py           # PC 端集成闭环
+    ├── e2e.py           # PC 端集成闭环（21 项）
+    ├── smoke.py         # 真服务冒烟（起进程 → 探活 → 二维码 → 未授权被拒）
+    ├── device_e2e.py    # 真机验收脚本（adb 驱动，6 项）
     └── device-checklist.md
 ```
 

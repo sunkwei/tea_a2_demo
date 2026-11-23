@@ -199,6 +199,7 @@
 | 18 | 🎮 GoDot 三国肉鸽 | `GoDot/` | Godot 4 项目：三国题材肉鸽 | Godot 4 | Godot 打开 | — |
 | 19 | 🏗️ 青岛栈桥建模 | `zhanqiao/` | 真实尺寸 Blender 建模 | Blender | 打开 `.blend` | `python zhanqiao/verify.py` |
 | 20 | 🎨 彩色标签 | `firefox-tab-colors/` | Firefox 扩展：单个标签上色（分组之上再区分） | WebExtension MV3 | `about:debugging` 临时加载 | `npm run tabcolors:e2e -- <端口>` |
+| 21 | 📲 a2_share 隔空投送 | `a2-share/` | 手机扫码 → PC 直传文件与剪贴板，断网缓存、回来自动补发 | Python 3.11 + Android/Kotlin | `python a2-share/pc/a2_share.py` | `npm run test:a2share` |
 
 > `shared/` 不是独立项目：它是 `bilibili/` 与 `zhihu/` 共用的登录态 + LLM 调用层。
 > 五个 LLM 相关应用（便笺 / 划词助手 / 三国杀 / 陶器史 / 李清照）默认连本机 `tea_a2`（`http://localhost:8383`）。
@@ -212,7 +213,7 @@
 
 | 情况 | 项目 | `PROMPT.md` |
 |------|------|-------------|
-| ✅ 本机创建 + 有留档 | 🦊 `tea-select/`、🏺 `pottery/`、🪷 `li-qingzhao/` | 创建与后续改动都在 |
+| ✅ 本机创建 + 有留档 | 🦊 `tea-select/`、🏺 `pottery/`、🪷 `li-qingzhao/`、📲 `a2-share/` | 创建与后续改动都在 |
 | ⚠️ 本机创建，但会话没留下 | 🌿 中药大全、📌 便笺、🧊 魔方、🚀 终末地、🏘️ AI 小镇、⚔️ 三国杀、📼 视频分析、🏗️ 栈桥 | 无（可补录） |
 | 📦 **外部引入**（不是本机创建的） | 📺 `bilibili/`、📚 `zhihu/`、🐱 `meow-mart/`、🐍 贪吃蛇、🎬 短片、📺 IPTV、🎮 GoDot | 本机没有创建提示词；`bilibili/`、`meow-mart/` 有一份，但只含搬进来之后的改动 |
 
