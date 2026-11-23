@@ -41,6 +41,7 @@ import com.tea.a2share.svc.TransferService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withContext
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -272,7 +273,7 @@ class ScanActivity : AppCompatActivity() {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
         }
         val addressInput = EditText(this).apply {
-            hint = "PC 地址，例如 192.168.1.23:8899"
+            hint = "PC 地址，例如 192.168.1.23（端口默认 8899）"
             inputType = android.text.InputType.TYPE_CLASS_TEXT
             setText(app.prefs.baseUrl?.removePrefix("http://") ?: "")
         }
@@ -292,28 +293,51 @@ class ScanActivity : AppCompatActivity() {
                     toast(getString(R.string.error_bad_payload))
                     return@setPositiveButton
                 }
-                if (address.isEmpty()) {
+                val baseUrl = normalizeAddress(address)
+                if (baseUrl == null) {
                     toast("请填写 PC 上显示的监听地址")
                     return@setPositiveButton
                 }
-                val baseUrl = if (address.startsWith("http")) address else "http://$address"
                 pairWithSecret(null, baseUrl, code)
             }
             .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
+    /**
+     * 地址容错：
+     * - 中文输入法常打出全角冒号「：」→ 换成半角；
+     * - 只写 IP 不写端口 → 补默认端口 8899；
+     * - 没写协议 → 补 http://。
+     */
+    private fun normalizeAddress(raw: String): String? {
+        var text = raw.trim().replace('\uFF1A', ':').replace(" ", "")
+        if (text.isEmpty()) return null
+        if (!text.startsWith("http://") && !text.startsWith("https://")) {
+            text = "http://$text"
+        }
+        val host = text.substringAfter("://")
+        if (!host.contains(':')) text = "$text:$DEFAULT_PC_PORT"
+        return text
+    }
+
     private fun pairWithSecret(secret: String?, baseUrl: String, code: String? = null) {
         lifecycleScope.launch {
+            Log.i(TAG, "配对开始：地址=$baseUrl 方式=${if (secret != null) "扫码" else "短码"}")
             app.prefs.baseUrl = baseUrl
             try {
-                val hello = app.client.hello()
+                // 网络调用必须在 IO 线程（lifecycleScope 默认是 Main，会抛 NetworkOnMainThreadException）
+                val hello = withContext(Dispatchers.IO) { app.client.hello() }
                 if (hello == null) {
+                    Log.w(TAG, "探活失败（连不上或超时）")
                     toast("连不上 PC，请检查是否同一 Wi-Fi / 访客网络隔离")
                     app.prefs.baseUrl = null
                     return@launch
                 }
-                val response = app.client.pair(secret, code, app.deviceInfo)
+                Log.i(TAG, "探活成功：PC=${hello.name} sid=${hello.sid}")
+                val response = withContext(Dispatchers.IO) {
+                    app.client.pair(secret, code, app.deviceInfo)
+                }
                 app.prefs.token = response.token
                 app.prefs.sid = response.sid
                 app.prefs.pcId = response.pcId
@@ -321,14 +345,16 @@ class ScanActivity : AppCompatActivity() {
                 app.prefs.pairedAt = System.currentTimeMillis()
                 app.prefs.wifiHandle = app.connectivity.currentHandle()
                 app.setPairState(PairState.CONNECTED)
+                Log.i(TAG, "配对成功：PC=${response.pcName} sid=${response.sid}")
                 toast(getString(R.string.pair_success, response.pcName))
                 TransferService.start(this@ScanActivity)
                 finish()
             } catch (e: ApiException) {
+                Log.w(TAG, "配对被拒：${e.error.code} ${e.error.message}")
                 app.prefs.baseUrl = null
-                val attempts = e.error.let { 5 }
-                toast(getString(R.string.error_pair_failed, attempts))
+                toast(getString(R.string.error_pair_failed, 5))
             } catch (e: Exception) {
+                Log.w(TAG, "配对异常：${e.javaClass.name}: ${e.message}", e)
                 app.prefs.baseUrl = null
                 toast(getString(R.string.error_pair_failed, 5))
             }
@@ -345,4 +371,11 @@ class ScanActivity : AppCompatActivity() {
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    private companion object {
+        const val TAG = "a2share"
+
+        /** PC 端默认端口（与 PC 的 --port 默认值一致）。 */
+        const val DEFAULT_PC_PORT = 8899
+    }
 }

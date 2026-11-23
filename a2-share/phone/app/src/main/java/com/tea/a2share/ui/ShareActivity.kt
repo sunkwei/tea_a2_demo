@@ -152,15 +152,17 @@ class ShareActivity : AppCompatActivity() {
             if (textPayload != null && uris.isEmpty()) {
                 val id = UUID.randomUUID().toString()
                 val target = app.files.queueDirFor(id).resolve("clipboard.txt")
-                target.parentFile?.mkdirs()
-                target.writeText(textPayload ?: "", Charsets.UTF_8)
-                val result = app.repository.enqueue(
-                    kind = QueueRepository.KIND_CLIPBOARD_TEXT,
-                    displayName = "剪贴板文字",
-                    mime = "text/plain",
-                    size = target.length(),
-                    localPath = target.absolutePath,
-                )
+                val result = withContext(Dispatchers.IO) {
+                    target.parentFile?.mkdirs()
+                    target.writeText(textPayload ?: "", Charsets.UTF_8)
+                    app.repository.enqueue(
+                        kind = QueueRepository.KIND_CLIPBOARD_TEXT,
+                        displayName = "剪贴板文字",
+                        mime = "text/plain",
+                        size = target.length(),
+                        localPath = target.absolutePath,
+                    )
+                }
                 when (result) {
                     is QueueRepository.EnqueueResult.Accepted -> ok++
                     is QueueRepository.EnqueueResult.Rejected -> {
@@ -174,24 +176,29 @@ class ShareActivity : AppCompatActivity() {
                 val id = UUID.randomUUID().toString()
                 val name = displayName(uri)
                 val target = app.files.queueDirFor(id).resolve(sanitize(name))
-                val copied = withContext(Dispatchers.IO) {
-                    try {
+                val mime = contentResolver.getType(uri) ?: "application/octet-stream"
+                val result = withContext(Dispatchers.IO) {
+                    val copied = try {
                         app.files.copyFromUri(contentResolver, uri, target)
                     } catch (e: Exception) {
                         null
                     }
+                    if (copied == null) {
+                        failed++
+                        null
+                    } else {
+                        app.repository.enqueue(
+                            kind = QueueRepository.KIND_FILE,
+                            displayName = name,
+                            mime = mime,
+                            size = copied,
+                            localPath = target.absolutePath,
+                        )
+                    }
                 }
-                if (copied == null) {
-                    failed++
+                if (result == null) {
                     continue
                 }
-                val result = app.repository.enqueue(
-                    kind = QueueRepository.KIND_FILE,
-                    displayName = name,
-                    mime = contentResolver.getType(uri) ?: "application/octet-stream",
-                    size = copied,
-                    localPath = target.absolutePath,
-                )
                 when (result) {
                     is QueueRepository.EnqueueResult.Accepted -> {
                         ok++

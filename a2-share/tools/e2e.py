@@ -337,6 +337,35 @@ def run_scenarios(
         f"saved_as={saved}",
     )
 
+    # ------------------------------------------------ 剪贴板 Unicode 逐字
+    unicode_text = "a2_share 剪贴板测试 🐱 emoji"
+    status, data = client.json(
+        "POST", "/v1/clipboard/text", {"v": 1, "text": unicode_text}
+    )
+    ok = status == 200 and data.get("chars") == len(unicode_text)
+    detail = f"chars={data.get('chars')}（期望 {len(unicode_text)}）"
+    check("剪贴板接口收到的 Unicode 文本字符数正确", ok, detail)
+
+    # 平台适配器直测：e2e 里的 clipboard 是假的（会走降级），这里测真的那条路
+    from a2share.clipboard import Clipboard
+    from a2share.log import NullLogger
+
+    real = Clipboard(NullLogger(), recv / "scripts")
+    wrote, reason = real.write_text(unicode_text)
+    detail2 = "写入=" + str(wrote)
+    if wrote and sys.platform == "win32":
+        import subprocess
+        out = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", "Get-Clipboard"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
+        )
+        got = out.stdout.strip()
+        detail2 += "；系统剪贴板=" + repr(got) + "；一致=" + str(got == unicode_text)
+        wrote = wrote and got == unicode_text
+    elif wrote:
+        detail2 += "（非 Windows，跳过读回比对）"
+    check("剪贴板 Unicode 文本逐字一致（中文 + emoji）", wrote, detail2)
+
     # -------------------------------------------------------------- 幂等
     status, again = client.json("POST", "/v1/uploads/u1/finish", {"v": 1, "sha256": None})
     check(

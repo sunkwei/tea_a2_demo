@@ -11,12 +11,16 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from .log import Logger
 
-_TEXT_FALLBACK_SCRIPT = """param([string]$Text)
-[Console]::In.ReadToEnd() | Set-Clipboard
+# 兜底脚本读 UTF-8 文本文件再写剪贴板。
+# 不要用 stdin：[Console]::In 按控制台代码页解码，中文/emoji 会变成乱码。
+_TEXT_FALLBACK_SCRIPT = """param([string]$Path)
+$text = Get-Content -Raw -Encoding UTF8 -Path $Path
+Set-Clipboard -Value $text
 """
 
 _IMAGE_SCRIPT = """param([string]$Path)
@@ -26,6 +30,15 @@ $bitmap = New-Object System.Drawing.Bitmap($Path)
 [System.Windows.Forms.Clipboard]::SetImage($bitmap)
 $bitmap.Dispose()
 """
+
+
+def utf16_bytes(text: str) -> bytes:
+    """文本 → UTF-16LE 字节（含结尾的 NUL 终止符）。
+
+    Windows 的 CF_UNICODETEXT 要的是 UTF-16；非 BMP 字符（emoji）占 2 个码元，
+    所以这里不能用 ``len(text)`` 估算长度。
+    """
+    return text.encode("utf-16-le") + b"\x00\x00"
 
 
 def _run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -118,11 +131,16 @@ class Clipboard:
             user32 = ctypes.windll.user32
             kernel32 = ctypes.windll.kernel32
             if not user32.OpenClipboard(None):
-                return False
+                # 剪贴板可能被别的进程占着，稍等再试
+                time.sleep(0.2)
+                if not user32.OpenClipboard(None):
+                    return False
             try:
                 user32.EmptyClipboard()
-                data = text + "\0"
-                size = len(data) * ctypes.sizeof(ctypes.c_wchar)
+                # 缓冲区大小必须按 UTF-16 编码后的字节数算：中文是 1 个 wchar，
+                # 但 emoji（非 BMP）是 2 个 wchar —— 按 len(text) 算会截断。
+                raw = utf16_bytes(text)
+                size = len(raw)
                 handle = kernel32.GlobalAlloc(GMEM_MOVEABLE, size)
                 if not handle:
                     return False
@@ -130,7 +148,7 @@ class Clipboard:
                 if not locked:
                     kernel32.GlobalFree(handle)
                     return False
-                ctypes.memmove(locked, ctypes.create_unicode_buffer(data), size)
+                ctypes.memmove(locked, ctypes.create_string_buffer(raw, size), size)
                 kernel32.GlobalUnlock(handle)
                 if not user32.SetClipboardData(CF_UNICODETEXT, handle):
                     kernel32.GlobalFree(handle)
@@ -145,10 +163,15 @@ class Clipboard:
         script = self._write_script("clip-text.ps1", _TEXT_FALLBACK_SCRIPT)
         if script is None:
             return False, "无法写入 PowerShell 脚本"
+        payload = script.with_name("clip-text.txt")
+        try:
+            payload.write_text(text, encoding="utf-8")
+        except OSError as exc:
+            return False, f"写临时文件失败: {exc}"
         try:
             proc = _run(
-                ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script)],
-                input=text.encode("utf-16-le"),
+                ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+                 str(script), "-Path", str(payload)],
             )
         except (OSError, subprocess.SubprocessError) as exc:
             return False, str(exc)

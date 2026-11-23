@@ -12,6 +12,24 @@
 | 网络 | 同一 Wi-Fi，**关闭访客网络 / AP 隔离** | 隔离会让 `hello` 超时 |
 | PC 端 | `python a2-share/pc/a2_share.py --selftest` 全绿 | 见 §6 |
 | 手机端 | `app-release.apk` 已安装，相机与通知权限已授权 | 见 §6 |
+> **2026-11-23 真机实测记录**（小米 14 / Android 16 / HyperOS，PC：Windows 11 / 172.16.1.219）
+> 自动化脚本：`python a2-share/tools/device_e2e.py --serial ZXW49LV8FA895HKV` → **6/6 通过**
+>
+> | 用例 | 结果 | 证据 |
+> |---|---|---|
+> | 分享目标出现在系统分享面板 | 通过 | 系统分享面板可选中 a2_share（FR-P01） |
+> | AC-01 / AC-02 文件落盘 | 通过 | 277823 字节，md5 与源一致 |
+> | AC-06 同名不覆盖 | 通过 | `x.jpg` / `x (1).jpg` / `x (2).jpg` |
+> | AC-09 剪贴板 | 通过 | PC 日志 `clipboard_received` + 剪贴板逐字一致 |
+> | AC-20 离线缓存 → 重扫后补发 | 通过 | 入队 → 重扫 → 自动补发（md5 一致） |
+> | AC-27 非 Wi-Fi 不外发 | 通过 | 关 Wi-Fi 后 0 条 HTTP 请求 |
+> | AC-28 离开 Wi-Fi 需重扫 | 通过 | 状态回到「未配对 / 请扫码连接 PC」 |
+>
+> 截图：`.tea_agent_run/tmp/dev/`（分享面板、确认条、队列界面）。
+
+---
+
+
 
 ---
 

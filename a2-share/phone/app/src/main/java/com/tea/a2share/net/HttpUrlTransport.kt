@@ -1,6 +1,7 @@
 package com.tea.a2share.net
 
 import android.os.Build
+import android.util.Log
 import com.tea.a2share.BuildConfig
 import org.json.JSONObject
 import java.io.IOException
@@ -76,10 +77,12 @@ class HttpUrlTransport(
                 connection.outputStream.use { it.write(body) }
             }
             val code = connection.responseCode
+            Log.d(TAG, "$method $path -> $code")
             val stream = if (code in 200..299) connection.inputStream else connection.errorStream
             val text = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: ""
             return HttpResponse(code, text)
         } catch (e: IOException) {
+            Log.w(TAG, "$method $path 失败：${e.message}")
             throw IOException(e.message ?: "网络错误", e)
         } finally {
             connection.disconnect()
@@ -87,6 +90,8 @@ class HttpUrlTransport(
     }
 
     companion object {
+        private const val TAG = "a2share"
+
         /** Android 9+ 默认禁止明文 HTTP，manifest 里已放行；这里再确认一次运行环境。 */
         val supportsCleartext: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
     }

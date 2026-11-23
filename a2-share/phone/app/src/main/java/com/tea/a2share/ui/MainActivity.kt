@@ -22,7 +22,9 @@ import com.tea.a2share.core.PairState
 import com.tea.a2share.data.QueueItem
 import com.tea.a2share.data.QueueStatus
 import com.tea.a2share.svc.TransferService
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * 主界面：连接状态 + 队列（需求 FR-P06 / FR-P07 / FR-P14）。
@@ -242,39 +244,49 @@ class MainActivity : AppCompatActivity() {
             toast(getString(R.string.clipboard_no_image))
             return
         }
-        if (uri != null) {
-            // 剪贴板图片：复制成 png 走文件链路（FR-P04 / FR-P05）
-            val id = java.util.UUID.randomUUID().toString()
-            val target = app.files.queueDirFor(id).resolve("clipboard.png")
-            try {
-                app.files.copyFromUri(contentResolver, uri, target)
-            } catch (e: Exception) {
-                toast(getString(R.string.clipboard_no_image))
-                return
+        lifecycleScope.launch {
+            if (uri != null) {
+                // 剪贴板图片：复制成 png 走文件链路（FR-P04 / FR-P05）
+                val id = java.util.UUID.randomUUID().toString()
+                val target = app.files.queueDirFor(id).resolve("clipboard.png")
+                val copied = withContext(Dispatchers.IO) {
+                    try {
+                        app.files.copyFromUri(contentResolver, uri, target)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                if (copied == null) {
+                    toast(getString(R.string.clipboard_no_image))
+                    return@launch
+                }
+                val result = withContext(Dispatchers.IO) {
+                    app.repository.enqueue(
+                        kind = com.tea.a2share.data.QueueRepository.KIND_CLIPBOARD_IMAGE,
+                        displayName = "clipboard.png",
+                        mime = "image/png",
+                        size = copied,
+                        localPath = target.absolutePath,
+                    )
+                }
+                handleEnqueue(result, id)
+                return@launch
             }
-            val size = target.length()
-            val result = app.repository.enqueue(
-                kind = com.tea.a2share.data.QueueRepository.KIND_CLIPBOARD_IMAGE,
-                displayName = "clipboard.png",
-                mime = "image/png",
-                size = size,
-                localPath = target.absolutePath,
-            )
+            val id = java.util.UUID.randomUUID().toString()
+            val target = app.files.queueDirFor(id).resolve("clipboard.txt")
+            val result = withContext(Dispatchers.IO) {
+                target.parentFile?.mkdirs()
+                target.writeText(text ?: "", Charsets.UTF_8)
+                app.repository.enqueue(
+                    kind = com.tea.a2share.data.QueueRepository.KIND_CLIPBOARD_TEXT,
+                    displayName = "剪贴板文字",
+                    mime = "text/plain",
+                    size = target.length(),
+                    localPath = target.absolutePath,
+                )
+            }
             handleEnqueue(result, id)
-            return
         }
-        val id = java.util.UUID.randomUUID().toString()
-        val target = app.files.queueDirFor(id).resolve("clipboard.txt")
-        target.parentFile?.mkdirs()
-        target.writeText(text ?: "", Charsets.UTF_8)
-        val result = app.repository.enqueue(
-            kind = com.tea.a2share.data.QueueRepository.KIND_CLIPBOARD_TEXT,
-            displayName = "剪贴板文字",
-            mime = "text/plain",
-            size = target.length(),
-            localPath = target.absolutePath,
-        )
-        handleEnqueue(result, id)
     }
 
     private fun handleEnqueue(result: com.tea.a2share.data.QueueRepository.EnqueueResult, id: String) {
