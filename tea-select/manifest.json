@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "tea_a2 划词助手",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "划词后弹出横幅：翻译 / 搜索 / 总结；划图（Alt+Shift+A）后识图。调用本机 tea_a2。",
   "browser_specific_settings": {
     "gecko": {

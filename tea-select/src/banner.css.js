@@ -33,7 +33,29 @@
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
   backdrop-filter: blur(6px);
   white-space: nowrap;
+  cursor: grab;
 }
+/* 左边那排点是「按住可以拖」的提示 */
+.bar .grip {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 4px;
+  cursor: grab;
+}
+.bar .grip i {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.34);
+}
+.bar .grip:hover i { background: rgba(255, 255, 255, 0.72); }
+/* 拖动中：整个弹框都显示抓手，且不参与选字 */
+.wrap.dragging { user-select: none; }
+.wrap.dragging,
+.wrap.dragging * { cursor: grabbing !important; }
 .bar button.task {
   appearance: none;
   border: 0;
@@ -81,6 +103,7 @@
   padding: 7px 8px 7px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.09);
   background: rgba(255, 255, 255, 0.03);
+  cursor: grab;
 }
 .panel-title {
   font-size: 12px;
@@ -109,7 +132,7 @@
 .panel-head button.close-btn:hover { background: rgba(232, 90, 90, 0.85); color: #fff; }
 .panel-body {
   padding: 10px 12px;
-  max-height: 300px;
+  max-height: min(300px, 52vh); /* 窗口矮时别把面板撑出屏幕 */
   overflow: auto;
   font-size: 13.5px;
   line-height: 1.62;

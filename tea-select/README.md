@@ -15,7 +15,7 @@ Firefox 扩展：**划词之后在鼠标位置弹出一条横幅**，横幅上�
 ## 安装
 
 ```bash
-node tea-select/tools/build.mjs        # 产出 tea-select/dist/tea-select-0.1.0.zip
+node tea-select/tools/build.mjs        # 产出 tea-select/dist/tea-select-<版本>.zip
 ```
 
 Firefox 里：`about:debugging#/runtime/this-firefox` → **临时载入附加组件** → 选这个 zip。
@@ -31,6 +31,13 @@ Firefox 里：`about:debugging#/runtime/this-firefox` → **临时载入附加�
    面板里有「复制」「在浏览器打开」（搜索任务才有）「关闭」。
 4. **结果面板是常驻的**：滚动页面、点页面别处都不会把它收走（避免读到一半就没了），
    只有点面板上的「关闭」（或按 Esc、横幅上的 ×）才收起。
+5. **弹框可以拖着走**：按住横幅（最左边那排点，或按钮之间的空白）或者结果面板的标题栏，
+   就能把整个弹框拖到别处；拖到哪就留在哪（面板再变大也不会跳回选区），
+   拖出窗口会被自动拉回视口内。想让它回到选区旁边，重新划一次词就行。
+
+**摆放规则**：横幅 + 结果面板按「一整块」定位——整块优先摆在选区上方，放不下就翻到下方，
+然后整体钳进视口（左右各留 8px）。所以贴着窗口边缘划词时，正文也不会被切掉。
+拖动过之后位置由你说了算，只有窗口尺寸变化 / 面板内容变多时会重新钳一次。
 
 快捷键：`Alt+Shift+T` 打开设置页（页面上也能用）。
 
@@ -148,10 +155,10 @@ tea-select/
   manifest.json          MV3，Firefox（gecko id: tea-select@tea-a2.local）
   src/core.js            纯逻辑：语言判断、提示词、请求体、搜索结果解析（不碰 DOM）
   src/background.js      后台：设置存取、调用 tea_a2、搜索
-  src/content.js         内容脚本：监听划词 → shadow DOM 横幅 → 结果面板；划图选区覆盖层
+  src/content.js         内容脚本：监听划词 → shadow DOM 横幅 → 结果面板（可拖动）；划图选区覆盖层
   src/banner.css.js      横幅样式（注入 shadow root）
   src/options.html/js/css 设置页
-  tools/selftest.mjs     核心逻辑单测（node）
+  tools/selftest.mjs     核心逻辑单测（node；含弹框定位的纯算术断言）
   tools/build.mjs        打包 zip
   tools/test-page.html   e2e 用的测试页
   tools/options-harness.html  设置页离线测试台（用假 browser API 跑设置页）
@@ -174,6 +181,12 @@ node tea-select/tools/selftest-live.mjs  # 联调断言：真打 tea_a2（含模
 
 ```bash
 node .tea_agent_run/scripts/firefox-e2e.mjs
+```
+
+弹框拖动 / 贴边不出画的端到端（合成 mousedown → mousemove → mouseup，断言位移与视口内约束）：
+
+```bash
+node .tea_agent_run/scripts/firefox-drag.mjs
 ```
 
 ## 已知限制

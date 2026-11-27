@@ -26,11 +26,24 @@ fs.mkdirSync(dist, { recursive: true });
 const items = ['manifest.json', 'src', 'icons'].filter((it) => fs.existsSync(path.join(root, it)));
 
 function which(cmd) {
-  const res = spawnSync('sh', ['-c', `command -v ${cmd}`], { encoding: 'utf8' });
-  return res.status === 0 ? res.stdout.trim() : '';
+  // Windows 上不一定有 sh（git-bash 的 sh 常常不在 PATH 里）→ 先用 where
+  const probes =
+    process.platform === 'win32'
+      ? [
+          { bin: 'where', args: [cmd] },
+          { bin: 'sh', args: ['-c', `command -v ${cmd}`] },
+        ]
+      : [{ bin: 'sh', args: ['-c', `command -v ${cmd}`] }];
+  for (const p of probes) {
+    const res = spawnSync(p.bin, p.args, { encoding: 'utf8' });
+    const out = res.status === 0 ? String(res.stdout || '').trim() : '';
+    if (out) return out.split(/\r?\n/)[0].trim();
+  }
+  return '';
 }
 
-const bsdtar = which('bsdtar');
+// Windows 自带的 bsdtar 叫 tar.exe（System32），所以两个名字都找
+const bsdtar = which('bsdtar') || which('tar');
 const zipBin = which('zip');
 if (!bsdtar && !zipBin) {
   console.error('打包失败：找不到 bsdtar，也没有 zip 命令');

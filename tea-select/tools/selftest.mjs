@@ -263,5 +263,56 @@ eq('没有能写的就退而求其次', Core.pickWorkspaceId({ workspaces: [{ id
 eq('空列表没有工作区', Core.pickWorkspaceId({ workspaces: [] }), '');
 eq('识图任务在任务表里', Core.TASKS.vision.name, '识图');
 
+
+console.log('\n[9] 弹框定位（拖动 / 贴边不出画）');
+const VW = 1280;
+const VH = 900;
+const view = { w: VW, h: VH };
+const closed = { w: 210, h: 36 };          // 只有横幅
+const opened = { w: 380, h: 380 };         // 横幅 + 结果面板
+
+// 贴着鼠标：整块放在锚点上方
+const above = Core.anchorPosition({ x: 600, y: 500 }, closed, view);
+eq('上方放得下 → 摆在锚点上方', above.below, false);
+eq('整块底边离锚点 12px', above.top, 500 - 36 - 12);
+eq('水平中心对准鼠标', above.left, 600);
+
+// 视口顶部放不下 → 翻到下方
+const below = Core.anchorPosition({ x: 600, y: 40 }, closed, view);
+eq('上方放不下 → 摆在下方', below.below, true);
+eq('摆在下方时顶边在锚点下 16px', below.top, 40 + 16);
+
+// 贴着窗口右边滑、面板又宽 → 整块被拉回视口内，不会被切掉
+const rightEdge = Core.anchorPosition({ x: VW - 10, y: 500 }, opened, view);
+eq('右边缘：右边留 8px', rightEdge.left + opened.w / 2, VW - 8);
+const leftEdge = Core.anchorPosition({ x: 4, y: 500 }, opened, view);
+eq('左边缘：左边留 8px', leftEdge.left - opened.w / 2, 8);
+
+// 面板比视口还宽 → 居中（左右各让一半）
+const tinyView = { w: 320, h: 600 };
+eq('弹框比视口宽 → 居中', Core.clampPosition({ left: 999, top: 10 }, opened, tinyView).left, 160);
+
+// 整块比视口还高 → 顶到上边距，别往上跑出屏幕
+eq('比视口高 → 顶边贴住上边距', Core.clampPosition({ left: 600, top: -200 }, opened, view).top, 8);
+
+// 拖动只做钳制，位置基本按手走的
+const dragged = Core.clampPosition({ left: 700, top: 300, below: false }, opened, view);
+eq('拖动后位置跟手', dragged.left, 700);
+eq('拖动后位置跟手（纵向）', dragged.top, 300);
+eq('拖动保留 below 标记', dragged.below, false);
+const dragOut = Core.clampPosition({ left: -500, top: -500 }, opened, view);
+eq('拖出左上角 → 拉回视口', dragOut.left - opened.w / 2, 8);
+eq('拖出左上角 → 顶边拉回视口', dragOut.top, 8);
+const dragBottom = Core.clampPosition({ left: 700, top: 5000 }, opened, view);
+eq('拖出下边 → 底边留在视口内', dragBottom.top + opened.h, VH - 8);
+
+// 视口尺寸未知（0）时不乱来
+eq(
+  '视口宽高为 0 时原样返回',
+  JSON.stringify(Core.clampPosition({ left: 42, top: 24 }, closed, { w: 0, h: 0 })),
+  JSON.stringify({ left: 42, top: 24 })
+);
+ok('默认边距是 8px', Core.POPUP_MARGIN === 8, String(Core.POPUP_MARGIN));
+
 console.log('\n结果：' + passed + ' 通过，' + failed + ' 失败');
 process.exit(failed ? 1 : 0);

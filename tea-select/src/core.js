@@ -591,6 +591,70 @@
     return String(e.key || '').toLowerCase() === c.key;
   }
 
+  // ────────────────────────── 弹框定位 ──────────────────────────
+  //
+  // 横幅 + 结果面板是「一整块」：整块要么摆在锚点上方，要么摆在下方，再统一钳进视口。
+  // 坐标里的 left 是弹框的**水平中心**（CSS 里配 translateX(-50%)）。
+  // 这两条都是纯算术，tools/selftest.mjs 里离线断言。
+
+  const POPUP_GAP_UP = 12;   // 整块在锚点上方时，底边离锚点多远
+  const POPUP_GAP_DOWN = 16; // 整块在锚点下方时，顶边离锚点多远
+  const POPUP_MARGIN = 8;    // 离视口边缘至少留多少
+
+  function marginOf(margin) {
+    const m = Number(margin);
+    return m >= 0 && isFinite(m) ? m : POPUP_MARGIN;
+  }
+
+  /** 把弹框位置钳进视口（拖完、窗口尺寸变了都走这里） */
+  function clampPosition(pos, size, view, margin) {
+    const p = pos || {};
+    const s = size || {};
+    const v = view || {};
+    const m = marginOf(margin);
+    const vw = Number(v.w) || 0;
+    const vh = Number(v.h) || 0;
+    const w = Math.max(0, Number(s.w) || 0);
+    const h = Math.max(0, Number(s.h) || 0);
+    let left = Number(p.left) || 0;
+    let top = Number(p.top) || 0;
+    if (vw > 0) {
+      const half = w / 2;
+      const lo = m + half;
+      const hi = vw - m - half;
+      // 弹框比视口还宽时没得选，居中
+      left = hi >= lo ? Math.min(Math.max(left, lo), hi) : vw / 2;
+    }
+    if (vh > 0) {
+      const hi = vh - m - h;
+      top = hi >= m ? Math.min(Math.max(top, m), hi) : m;
+    }
+    const out = { left: Math.round(left), top: Math.round(top) };
+    if (p.below !== undefined) out.below = !!p.below;
+    return out;
+  }
+
+  /** 贴着锚点（鼠标 / 选区）摆：上方放得下就放上方，放不下就翻到下方 */
+  function anchorPosition(anchor, size, view, margin) {
+    const a = anchor || {};
+    const s = size || {};
+    const v = view || {};
+    const m = marginOf(margin);
+    const h = Math.max(0, Number(s.h) || 0);
+    const above = (Number(a.y) || 0) - h - POPUP_GAP_UP;
+    const below = above < m;
+    return clampPosition(
+      {
+        left: Number(a.x) || 0,
+        top: below ? (Number(a.y) || 0) + POPUP_GAP_DOWN : above,
+        below: below,
+      },
+      s,
+      v,
+      m
+    );
+  }
+
   // ────────────────────────── 导出 ──────────────────────────
 
   const api = {
@@ -633,6 +697,11 @@
     pickWorkspaceId,
     parseChord,
     matchChord,
+    POPUP_GAP_UP,
+    POPUP_GAP_DOWN,
+    POPUP_MARGIN,
+    clampPosition,
+    anchorPosition,
   };
 
   root.TeaCore = api;

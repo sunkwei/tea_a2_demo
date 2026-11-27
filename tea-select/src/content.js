@@ -24,6 +24,14 @@
   let lastY = 0;
   let hideTimer = null;
   let visionPreview = '';
+  let posLeft = 0;       // 弹框当前位置（left 是水平中心，配 CSS 的 translateX(-50%)）
+  let posTop = 0;
+  let posBelow = false;  // 现在摆在锚点的上方还是下方（拖动时保持不变）
+  let pinned = false;    // 用户拖过位置：之后面板变大也不再跳回选区
+  let dragState = null;
+  let suppressPointerUp = false; // 刚拖完，这一次松手不算划词
+  let sizeObserver = null;
+  const MARGIN = 8;      // 离视口边缘至少留这么多
 
   // ────────────────────────── 与后台通信 ──────────────────────────
 
@@ -82,10 +90,17 @@
 
     wrap = document.createElement('div');
     wrap.className = 'wrap';
+    wrap.addEventListener('mousedown', onDragDown);
     shadow.appendChild(wrap);
 
     bar = document.createElement('div');
     bar.className = 'bar';
+    const grip = document.createElement('div');
+    grip.className = 'grip';
+    grip.title = '按住拖动';
+    grip.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 3; i++) grip.appendChild(document.createElement('i'));
+    bar.appendChild(grip);
     for (const task of ['translate', 'search', 'summarize']) {
       const btn = document.createElement('button');
       btn.className = 'task';
@@ -162,30 +177,140 @@
     wrap.appendChild(panel);
 
     (document.body || document.documentElement).appendChild(host);
+
+    // 面板里的内容会异步变大（结果回来、图片加载完）→ 跟着重新钳一次位置
+    if (sizeObserver) {
+      try {
+        sizeObserver.disconnect();
+      } catch (e) {
+        /* 忽略 */
+      }
+      sizeObserver = null;
+    }
+    if (typeof ResizeObserver === 'function') {
+      try {
+        sizeObserver = new ResizeObserver(() => place());
+        sizeObserver.observe(wrap);
+      } catch (e) {
+        sizeObserver = null;
+      }
+    }
   }
 
   // ────────────────────────── 位置 ──────────────────────────
 
+  /** 整块弹框（横幅 + 结果面板）的尺寸 */
+  function popupSize() {
+    const r = wrap ? wrap.getBoundingClientRect() : null;
+    return { w: (r && r.width) || 180, h: (r && r.height) || 36 };
+  }
+
+  function viewportSize() {
+    return {
+      w: window.innerWidth || document.documentElement.clientWidth || 0,
+      h: window.innerHeight || document.documentElement.clientHeight || 0,
+    };
+  }
+
+  function applyPosition(pos) {
+    posLeft = Math.round(pos.left);
+    posTop = Math.round(pos.top);
+    if (pos.below !== undefined) posBelow = !!pos.below;
+    wrap.style.transform =
+      'translate(' + posLeft + 'px, ' + posTop + 'px) translateX(-50%)';
+    wrap.dataset.below = posBelow ? '1' : '0';
+  }
+
+  /**
+   * 定位：没拖过 → 贴着锚点（选区 / 鼠标）摆；拖过 → 保持拖到的位置。
+   * 尺寸按「整块」算，所以结果面板展开后整块也落在视口里，不会被窗口边缘切掉。
+   */
   function place(x, y) {
     if (!wrap) return;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const rect = bar.getBoundingClientRect();
-    const width = rect.width || 180;
-    const height = rect.height || 36;
-
-    let left = x;
-    left = Math.min(Math.max(left, 8 + width / 2), vw - 8 - width / 2);
-
-    let top = y - height - 12;
-    let below = false;
-    if (top < 8) {
-      top = y + 16;
-      below = true;
+    if (typeof x === 'number' && typeof y === 'number') {
+      lastX = x;
+      lastY = y;
     }
-    if (top + height > vh - 8) top = Math.max(8, vh - height - 8);
-    wrap.style.transform = 'translate(' + Math.round(left) + 'px, ' + Math.round(top) + 'px) translateX(-50%)';
-    wrap.dataset.below = below ? '1' : '0';
+    if (host && host.style.display === 'none') return;
+    const size = popupSize();
+    const view = viewportSize();
+    if (pinned) {
+      applyPosition(
+        Core.clampPosition({ left: posLeft, top: posTop, below: posBelow }, size, view, MARGIN)
+      );
+      return;
+    }
+    applyPosition(Core.anchorPosition({ x: lastX, y: lastY }, size, view, MARGIN));
+  }
+
+  // ────────────────────────── 拖动 ──────────────────────────
+  //
+  // 横幅整条（按钮除外）和结果面板的标题栏都能按住拖。
+  // 光标形状（grab）提示可拖，横幅最左边还有一排点。
+
+  /** 找到能拖的把手：横幅 / 面板标题栏；按钮、链接、输入框之类的不算 */
+  function dragHandle(target) {
+    if (!target || !target.closest) return null;
+    if (target.closest('button, a, input, textarea, select, summary, label, [contenteditable="true"]')) {
+      return null;
+    }
+    if (target.closest('.bar')) return target.closest('.bar');
+    if (target.closest('.panel-head')) return target.closest('.panel-head');
+    return null;
+  }
+
+  function onDragDown(ev) {
+    if (ev.button !== 0 || dragState) return;
+    if (!dragHandle(ev.target)) return;
+    ev.preventDefault(); // 别让页面开始选文字，也别把选区清掉
+    ev.stopPropagation();
+    dragState = {
+      x: ev.clientX,
+      y: ev.clientY,
+      left: posLeft,
+      top: posTop,
+      below: posBelow,
+      moved: false,
+    };
+    wrap.classList.add('dragging');
+    document.addEventListener('mousemove', onDragMove, true);
+    document.addEventListener('mouseup', onDragUp, true);
+  }
+
+  function onDragMove(ev) {
+    if (!dragState) return;
+    const dx = ev.clientX - dragState.x;
+    const dy = ev.clientY - dragState.y;
+    if (!dragState.moved) {
+      if (Math.abs(dx) + Math.abs(dy) < 3) return; // 手抖，不算拖动
+      dragState.moved = true;
+      suppressPointerUp = true;
+    }
+    ev.preventDefault();
+    ev.stopPropagation();
+    applyPosition(
+      Core.clampPosition(
+        { left: dragState.left + dx, top: dragState.top + dy, below: dragState.below },
+        popupSize(),
+        viewportSize(),
+        MARGIN
+      )
+    );
+  }
+
+  function onDragUp(ev) {
+    document.removeEventListener('mousemove', onDragMove, true);
+    document.removeEventListener('mouseup', onDragUp, true);
+    const moved = !!(dragState && dragState.moved);
+    dragState = null;
+    if (wrap) wrap.classList.remove('dragging');
+    if (!moved) return;
+    pinned = true; // 用户自己摆过位置：面板变大也别跳回选区
+    ev.preventDefault();
+    ev.stopPropagation();
+    setTimeout(() => {
+      suppressPointerUp = false;
+    }, 0);
   }
 
   // ────────────────────────── 横幅 ──────────────────────────
@@ -201,8 +326,9 @@
     panelBody.textContent = '';
     panelTitle.textContent = '';
     setButtonsEnabled(true);
-    place(x, y);
+    pinned = false; // 新的一次划词：重新贴着选区摆
     host.style.display = '';
+    place(x, y);
   }
 
   function hide() {
@@ -238,6 +364,11 @@
 
   function onPointerUp(ev) {
     if (pickerActive) return; // 正在划图，别弹划词横幅
+    if (suppressPointerUp) {
+      // 刚拖动过弹框：这次松手是拖动的尾巴，不当成划词
+      suppressPointerUp = false;
+      return;
+    }
     if (inBanner(ev.target)) return;
     const x = ev.clientX;
     const y = ev.clientY;
@@ -275,7 +406,7 @@
   // 结果面板是「常驻」的：滚动、点页面别处都不收起，只有关闭按钮（或 Esc）才关。
   function onResize() {
     if (!host || host.style.display === 'none') return;
-    place(lastX, lastY);
+    place();
   }
 
   function onKeyDown(ev) {
@@ -534,6 +665,7 @@
       err.className = 'error';
       err.textContent = (res && res.error) || '未知错误';
       panelBody.appendChild(err);
+      place();
       return;
     }
     panelTitle.textContent =
@@ -553,6 +685,7 @@
     const body = document.createElement('div');
     body.textContent = res.content || '(空)';
     panelBody.appendChild(body);
+    place();
   }
 
   // ────────────────────────── 执行任务 ──────────────────────────
@@ -568,6 +701,7 @@
     loading.className = 'loading';
     loading.textContent = '正在请求 tea_a2…';
     panelBody.appendChild(loading);
+    place(); // 面板刚展开（尺寸变了），整块重新摆一次
 
     let res;
     try {
